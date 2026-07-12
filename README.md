@@ -14,7 +14,7 @@ Four-layer one-shot sampler for AU, VST3 and standalone use. One MIDI note trigg
 - MIDI note-on triggering
 - Selectable 1–16 voice polyphony
 - Hold-to-repeat Burst mode with adjustable 1–30 Hz rate
-- Per-trigger parameter randomisation (PTE) with a real-time-safe audio path
+- Per-trigger parameter evolution (PTE) with a real-time-safe audio path
 - Per-slot LOCK controls to exclude layers from DICE and PTE
 - Separate DICE, SAMPLES and PARAMS actions
 - BACK recalls the previous generated combination
