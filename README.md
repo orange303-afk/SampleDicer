@@ -5,15 +5,19 @@ Four-layer one-shot sampler for AU, VST3 and standalone use. One MIDI note trigg
 <img width="815" height="911" alt="image" src="https://github.com/user-attachments/assets/3a3005f0-bb10-4a8f-ac0b-aacb39a5d0fd" />
 
 
-## Prototype features
+## Features
 
 - Four drag-and-drop sample slots with waveform display and previous/next folder navigation
 - Refined arc-style controls with parameter units
-- Per-slot volume, pitch, start and positive shift (0–250 ms)
+- Per-slot volume, pitch, draggable start point, positive shift (0–250 ms), and fade-end controls
+- Smooth real-time playheads and visual start, shift, and fade editing on every waveform
 - MIDI note-on triggering
 - Selectable 1–16 voice polyphony
 - Hold-to-repeat Burst mode with adjustable 1–30 Hz rate
+- Per-trigger parameter randomisation (PTE) with a real-time-safe audio path
+- Per-slot LOCK controls to exclude layers from DICE and PTE
 - Separate DICE, SAMPLES and PARAMS actions
+- BACK recalls the previous generated combination
 - Four global randomisation-depth controls
 - DAW state restoration for parameters and sample paths
 - Last-used sample folder is remembered globally; DICE can populate empty slots from it
@@ -29,6 +33,6 @@ cmake --build build --config Release
 
 The plug-ins are created below `build/SampleDicer_artefacts/Release/`; automatic copying into system plug-in folders is disabled.
 
-## Next milestone
+## Downloads
 
-Add per-parameter min/max ranges and locks, slot locks, waveform/start-point editing, polyphony, click-free fades, undo/redo for DICE, embedded sample assets and automated plug-in validation.
+Ready-to-use macOS VST3, Audio Unit, standalone, and Windows x64 VST3 builds are available on the [Releases](https://github.com/orange303-afk/SampleDicer/releases) page.

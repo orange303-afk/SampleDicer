@@ -46,21 +46,30 @@ public:
     bool isInterestedInFileDrag(const juce::StringArray&) override { return true; }
     void filesDropped(const juce::StringArray&, int, int) override;
     void refresh();
+    void mouseDown(const juce::MouseEvent&) override;
+    void mouseDrag(const juce::MouseEvent&) override;
+    void mouseUp(const juce::MouseEvent&) override;
 
 private:
     void changeListenerCallback(juce::ChangeBroadcaster*) override { repaint(); }
+    juce::Rectangle<int> getShiftedWaveformArea() const;
+    void updateStartFromMouse(const juce::MouseEvent&);
     SampleDicerAudioProcessor& processor;
     int slot;
     juce::Label title, file;
     juce::TextButton previous { "<" }, next { ">" };
-    std::array<DisplaySlider, 4> knobs;
-    std::array<juce::Label, 4> labels;
-    std::array<std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>, 4> links;
+    juce::ToggleButton slotLock { "LOCK" };
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> lockLink;
+    std::array<DisplaySlider, 5> knobs;
+    std::array<juce::Label, 5> labels;
+    std::array<std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>, 5> links;
     juce::AudioFormatManager thumbnailFormats;
     juce::AudioThumbnailCache thumbnailCache { 8 };
     juce::AudioThumbnail thumbnail { 512, thumbnailFormats, thumbnailCache };
     juce::File displayedFile;
     juce::Rectangle<int> waveformArea;
+    enum class DragTarget { none, start, fade };
+    DragTarget dragTarget = DragTarget::none;
 };
 
 class SampleDicerAudioProcessorEditor : public juce::AudioProcessorEditor, private juce::Timer
@@ -77,15 +86,17 @@ private:
     DicerLookAndFeel lookAndFeel;
     std::array<std::unique_ptr<SlotView>, 4> slots;
     DiceButton dice;
-    juce::TextButton samples { "SAMPLES" }, params { "PARAMS" };
+    juce::TextButton back { "<< BACK" }, samples { "SAMPLES" }, params { "PARAMS" };
     juce::HyperlinkButton about { "about", juce::URL() };
     juce::Label randomTitle;
     juce::Label voicesLabel, burstRateLabel;
     juce::ComboBox voices;
     juce::ToggleButton burst { "BURST" };
+    juce::ToggleButton pte { "PTE" };
     DisplaySlider burstRate;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> voicesLink;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> burstLink;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> pteLink;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> burstRateLink;
     std::array<DisplaySlider, 4> random;
     std::array<juce::Label, 4> randomLabels;
