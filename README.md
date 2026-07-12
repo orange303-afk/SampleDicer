@@ -2,7 +2,7 @@
 
 Four-layer one-shot sampler for AU, VST3 and standalone use. One MIDI note triggers all four layers. **DICE** selects samples from their source folders and randomises volume, pitch, start point and delay.
 
-<img width="815" height="911" alt="image" src="https://github.com/user-attachments/assets/3a3005f0-bb10-4a8f-ac0b-aacb39a5d0fd" />
+<img width="816" height="929" alt="image" src="https://github.com/user-attachments/assets/902e6251-1160-4eb2-82e8-952a89a0af9d" />
 
 
 ## Features
