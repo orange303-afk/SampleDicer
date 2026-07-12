@@ -42,5 +42,12 @@ Ready-to-use macOS VST3, Audio Unit, standalone, and Windows x64 VST3 builds are
 Sample Dicer is free for noncommercial use under the
 [PolyForm Noncommercial License 1.0.0](LICENSE). Commercial use, commercial
 development, and use in revenue-generating products or services require a
-separate paid license. Contact Ilya Orange at
-[ilyaorange.tilda.ws](https://ilyaorange.tilda.ws).
+separate paid license. Contact Ilya Orange through
+[Facebook](https://www.facebook.com/orange303/),
+[X](https://x.com/ilyaorangee), or
+[Telegram](https://t.me/orange303).
+
+## Support
+
+If you enjoy Sample Dicer and would like to support its development, you can
+[make a donation via PayPal](https://www.paypal.com/paypalme/ilyaorange303).
