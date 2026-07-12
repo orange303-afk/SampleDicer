@@ -53,5 +53,7 @@ If you enjoy Sample Dicer and would like to support its development, you can
 [make a donation via PayPal](https://www.paypal.com/paypalme/ilyaorange303).
 
 BTC: 3PZSPAgXpLUtnH2LH9TmxjizVUETHPa9cW
+
 ETH: 0x6144548f3f6071136fdf18134a99345cf12ae6b5
+
 USDT ERC20: 0x0f49f2cddf673214646a3154f60aa0c63a414ad3
