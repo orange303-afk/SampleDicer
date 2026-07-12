@@ -36,3 +36,11 @@ The plug-ins are created below `build/SampleDicer_artefacts/Release/`; automatic
 ## Downloads
 
 Ready-to-use macOS VST3, Audio Unit, standalone, and Windows x64 VST3 builds are available on the [Releases](https://github.com/orange303-afk/SampleDicer/releases) page.
+
+## License
+
+Sample Dicer is free for noncommercial use under the
+[PolyForm Noncommercial License 1.0.0](LICENSE). Commercial use, commercial
+development, and use in revenue-generating products or services require a
+separate paid license. Contact Ilya Orange at
+[ilyaorange.tilda.ws](https://ilyaorange.tilda.ws).
