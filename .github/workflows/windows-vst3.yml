@@ -1,0 +1,47 @@
+name: Windows VST3
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "Source/**"
+      - "CMakeLists.txt"
+      - ".github/workflows/windows-vst3.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows-vst3:
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out source and JUCE
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure
+        run: cmake -S . -B build -G "Visual Studio 17 2022" -A x64
+
+      - name: Build VST3
+        run: cmake --build build --config Release --target SampleDicer_VST3
+
+      - name: Package VST3
+        shell: pwsh
+        run: |
+          Compress-Archive `
+            -Path "build/SampleDicer_artefacts/Release/VST3/Sample Dicer.vst3" `
+            -DestinationPath "Sample-Dicer-1.0.0-Windows-x64-VST3.zip"
+
+      - name: Store workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sample-Dicer-1.0.0-Windows-x64-VST3
+          path: Sample-Dicer-1.0.0-Windows-x64-VST3.zip
+
+      - name: Attach to v1.0.0 release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload v1.0.0 Sample-Dicer-1.0.0-Windows-x64-VST3.zip --clobber
