@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.0 — 2026-07-13
+
+- Optional Glitch Mode with per-note inverted colour flashes and regenerated Zalgo text
+- Glitch waveform artefacts with randomized delay, stutter, crackle, and sample-hold processing
+- Random Round Robin mode that triggers one loaded slot and prevents immediate slot repeats
+- Whole-semitone Pitch control by default with Shift-modified 0.1-semitone precision
+- Real-time-safe fixed audio buffers, atomic mode parameters, and audio-engine random generation
+
 ## 1.4.0 — 2026-07-13
 
 - Options panel with persistent 60%, 100%, 120%, 150%, and 200% interface scale presets
