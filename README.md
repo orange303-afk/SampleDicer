@@ -8,9 +8,11 @@ Four-layer one-shot sampler for AU, VST3 and standalone use. One MIDI note trigg
 ## Features
 
 - Four drag-and-drop sample slots with waveform display and previous/next folder navigation
+- Smooth proportional interface resizing from 65% to 200%
 - Refined arc-style controls with parameter units
 - Per-slot volume, pitch, draggable start point, positive shift (0–250 ms), and fade-end controls
 - Smooth real-time playheads and visual start, shift, and fade editing on every waveform
+- Hover-highlighted Start and Fade markers
 - Non-crossing Start/Fade markers and mouse-wheel fade-duration editing
 - MIDI note-on triggering
 - Selectable 1–16 voice polyphony
@@ -23,6 +25,7 @@ Four-layer one-shot sampler for AU, VST3 and standalone use. One MIDI note trigg
 - Four global randomisation-depth controls
 - DAW state restoration for parameters and sample paths
 - Last-used sample folder is remembered globally; DICE can populate empty slots from it
+- Once-daily background check for newer GitHub releases with an in-plug-in notification
 
 ## Build (macOS)
 

@@ -49,11 +49,16 @@ public:
     void mouseDown(const juce::MouseEvent&) override;
     void mouseDrag(const juce::MouseEvent&) override;
     void mouseUp(const juce::MouseEvent&) override;
+    void mouseMove(const juce::MouseEvent&) override;
+    void mouseExit(const juce::MouseEvent&) override;
     void mouseWheelMove(const juce::MouseEvent&, const juce::MouseWheelDetails&) override;
 
 private:
+    enum class DragTarget { none, start, fade };
     void changeListenerCallback(juce::ChangeBroadcaster*) override { repaint(); }
     juce::Rectangle<int> getShiftedWaveformArea() const;
+    DragTarget markerAt(juce::Point<int>) const;
+    void updateMarkerHover(juce::Point<int>);
     void updateStartFromMouse(const juce::MouseEvent&);
     SampleDicerAudioProcessor& processor;
     int slot;
@@ -69,11 +74,13 @@ private:
     juce::AudioThumbnail thumbnail { 512, thumbnailFormats, thumbnailCache };
     juce::File displayedFile;
     juce::Rectangle<int> waveformArea;
-    enum class DragTarget { none, start, fade };
     DragTarget dragTarget = DragTarget::none;
+    DragTarget hoverTarget = DragTarget::none;
 };
 
-class SampleDicerAudioProcessorEditor : public juce::AudioProcessorEditor, private juce::Timer
+class SampleDicerAudioProcessorEditor : public juce::AudioProcessorEditor,
+                                        private juce::Timer,
+                                        private juce::URL::DownloadTaskListener
 {
 public:
     explicit SampleDicerAudioProcessorEditor(SampleDicerAudioProcessor&);
@@ -83,8 +90,12 @@ public:
 
 private:
     void timerCallback() override;
+    void finished(juce::URL::DownloadTask*, bool success) override;
+    void beginUpdateCheck();
+    void showUpdateAvailable(const juce::String& version, const juce::URL& releaseUrl);
     SampleDicerAudioProcessor& processor;
     DicerLookAndFeel lookAndFeel;
+    juce::Component content;
     std::array<std::unique_ptr<SlotView>, 4> slots;
     DiceButton dice;
     juce::TextButton back { "<< BACK" }, samples { "SAMPLES" }, params { "PARAMS" };
@@ -104,5 +115,7 @@ private:
     std::array<DisplaySlider, 4> random;
     std::array<juce::Label, 4> randomLabels;
     std::array<std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>, 4> randomLinks;
+    juce::File updateResponseFile;
+    std::unique_ptr<juce::URL::DownloadTask> updateDownload;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SampleDicerAudioProcessorEditor)
 };
