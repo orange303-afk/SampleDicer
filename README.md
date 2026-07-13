@@ -10,7 +10,7 @@ Four-layer one-shot sampler for AU, VST3 and standalone use. One MIDI note norma
 - Four drag-and-drop sample slots with waveform display and previous/next folder navigation
 - Smooth proportional interface resizing from 60% to 200%, plus persistent scale presets
 - Twenty persistent colour schemes with dark, light and colourful variations
-- Optional Glitch Mode with per-note inverted colour flashes, regenerated Zalgo text,
+- Optional Glitch Mode
   waveform artefacts, randomized delays, stutters, crackles and sample-hold glitches
 - Refined arc-style controls with parameter units
 - Per-slot volume, whole-semitone pitch with Shift fine mode (0.1 st), draggable start point,
