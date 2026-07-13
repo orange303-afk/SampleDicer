@@ -9,6 +9,34 @@ constexpr int designWidth = 820;
 constexpr int designHeight = 875;
 constexpr float minimumScale = 0.65f;
 constexpr float maximumScale = 2.0f;
+constexpr auto releasesUrl = "https://github.com/orange303-afk/SampleDicer/releases";
+constexpr auto latestReleaseApi = "https://api.github.com/repos/orange303-afk/SampleDicer/releases/latest";
+constexpr int64 updateCheckIntervalMs = 24 * 60 * 60 * 1000;
+
+juce::PropertiesFile::Options updateSettingsOptions()
+{
+    juce::PropertiesFile::Options options;
+    options.applicationName = "Sample Dicer Update Check";
+    options.filenameSuffix = "settings";
+    options.folderName = "Ilya Orange/Sample Dicer";
+    options.osxLibrarySubFolder = "Application Support";
+    return options;
+}
+
+bool isNewerVersion(juce::String candidate, juce::String current)
+{
+    const auto parse = [] (juce::String version)
+    {
+        version = version.trim().trimCharactersAtStart("vV");
+        auto parts = juce::StringArray::fromTokens(version, ".", {});
+        std::array<int, 4> numbers {};
+        for (size_t i = 0; i < numbers.size() && i < static_cast<size_t>(parts.size()); ++i)
+            numbers[i] = parts[static_cast<int>(i)].retainCharacters("0123456789").getIntValue();
+        return numbers;
+    };
+
+    return parse(candidate) > parse(current);
+}
 
 class AboutPanel : public juce::Component
 {
@@ -37,6 +65,7 @@ public:
         crypto.setColour(juce::TextEditor::outlineColourId, juce::Colours::transparentBlack);
         crypto.setColour(juce::TextEditor::textColourId, juce::Colour(0xffd6dae2));
         crypto.setFont(juce::FontOptions(12.0f));
+        crypto.setJustification(juce::Justification::centredTop);
         crypto.setText("BTC: 3PZSPAgXpLUtnH2LH9TmxjizVUETHPa9cW\n\n"
                        "ETH: 0x6144548f3f6071136fdf18134a99345cf12ae6b5\n\n"
                        "USDT ERC20: 0x0f49f2cddf673214646a3154f60aa0c63a414ad3",
@@ -247,13 +276,24 @@ void SlotView::paint(juce::Graphics& g)
         const auto start = juce::jmin(processor.state.getRawParameterValue(
             "slot" + juce::String(slot + 1) + ".start")->load(), fade);
         const auto startX = shiftedArea.getX() + juce::roundToInt(start * shiftedArea.getWidth());
-        g.setColour(juce::Colours::white.withAlpha(0.85f));
+        const auto startHovered = hoverTarget == DragTarget::start || dragTarget == DragTarget::start;
+        if (startHovered)
+        {
+            g.setColour(juce::Colours::white.withAlpha(0.16f));
+            g.fillRect(startX - 4, waveformArea.getY(), 9, waveformArea.getHeight());
+        }
+        g.setColour(juce::Colours::white.withAlpha(startHovered ? 1.0f : 0.85f));
         g.drawVerticalLine(startX, static_cast<float>(waveformArea.getY() + 2),
                           static_cast<float>(waveformArea.getBottom() - 2));
         juce::Path marker;
-        marker.addTriangle(static_cast<float>(startX - 4), static_cast<float>(waveformArea.getY() + 1),
-                           static_cast<float>(startX + 4), static_cast<float>(waveformArea.getY() + 1),
-                           static_cast<float>(startX), static_cast<float>(waveformArea.getY() + 7));
+        const auto startMarkerHalfWidth = startHovered ? 6.0f : 4.0f;
+        const auto startMarkerHeight = startHovered ? 9.0f : 7.0f;
+        marker.addTriangle(static_cast<float>(startX) - startMarkerHalfWidth,
+                           static_cast<float>(waveformArea.getY() + 1),
+                           static_cast<float>(startX) + startMarkerHalfWidth,
+                           static_cast<float>(waveformArea.getY() + 1),
+                           static_cast<float>(startX),
+                           static_cast<float>(waveformArea.getY() + 1) + startMarkerHeight);
         g.fillPath(marker);
 
         const auto fadeX = shiftedArea.getX() + juce::roundToInt(fade * shiftedArea.getWidth());
@@ -290,13 +330,24 @@ void SlotView::paint(juce::Graphics& g)
             g.fillRect(juce::Rectangle<int>(fadeX, waveformArea.getY(),
                                             shiftedArea.getRight() - fadeX, waveformArea.getHeight()));
         }
-        g.setColour(juce::Colour(0xffe35f6f));
+        const auto fadeHovered = hoverTarget == DragTarget::fade || dragTarget == DragTarget::fade;
+        if (fadeHovered)
+        {
+            g.setColour(juce::Colour(0xffe35f6f).withAlpha(0.22f));
+            g.fillRect(fadeX - 4, waveformArea.getY(), 9, waveformArea.getHeight());
+        }
+        g.setColour(fadeHovered ? juce::Colour(0xffff7b89) : juce::Colour(0xffe35f6f));
         g.drawVerticalLine(fadeX, static_cast<float>(waveformArea.getY() + 2),
                            static_cast<float>(waveformArea.getBottom() - 2));
         juce::Path fadeMarker;
-        fadeMarker.addTriangle(static_cast<float>(fadeX - 4), static_cast<float>(waveformArea.getBottom() - 1),
-                               static_cast<float>(fadeX + 4), static_cast<float>(waveformArea.getBottom() - 1),
-                               static_cast<float>(fadeX), static_cast<float>(waveformArea.getBottom() - 7));
+        const auto fadeMarkerHalfWidth = fadeHovered ? 6.0f : 4.0f;
+        const auto fadeMarkerHeight = fadeHovered ? 9.0f : 7.0f;
+        fadeMarker.addTriangle(static_cast<float>(fadeX) - fadeMarkerHalfWidth,
+                               static_cast<float>(waveformArea.getBottom() - 1),
+                               static_cast<float>(fadeX) + fadeMarkerHalfWidth,
+                               static_cast<float>(waveformArea.getBottom() - 1),
+                               static_cast<float>(fadeX),
+                               static_cast<float>(waveformArea.getBottom() - 1) - fadeMarkerHeight);
         g.fillPath(fadeMarker);
 
         const auto playhead = processor.playheadPosition(slot);
@@ -327,6 +378,41 @@ juce::Rectangle<int> SlotView::getShiftedWaveformArea() const
     return waveformArea.withTrimmedLeft(juce::jlimit(0, waveformArea.getWidth() - 12, offset));
 }
 
+SlotView::DragTarget SlotView::markerAt(juce::Point<int> position) const
+{
+    if (!waveformArea.contains(position) || thumbnail.getTotalLength() <= 0.0)
+        return DragTarget::none;
+
+    const auto area = getShiftedWaveformArea();
+    const auto fade = processor.state.getRawParameterValue(
+        "slot" + juce::String(slot + 1) + ".fade")->load();
+    const auto start = juce::jmin(processor.state.getRawParameterValue(
+        "slot" + juce::String(slot + 1) + ".start")->load(), fade);
+    const auto startX = area.getX() + juce::roundToInt(start * area.getWidth());
+    const auto fadeX = area.getX() + juce::roundToInt(fade * area.getWidth());
+    const auto startDistance = std::abs(position.x - startX);
+    const auto fadeDistance = std::abs(position.x - fadeX);
+    constexpr int hoverRadius = 10;
+
+    if (startDistance > hoverRadius && fadeDistance > hoverRadius)
+        return DragTarget::none;
+    if (startDistance <= hoverRadius && fadeDistance <= hoverRadius)
+        return position.y < waveformArea.getCentreY() ? DragTarget::start : DragTarget::fade;
+    return fadeDistance <= startDistance ? DragTarget::fade : DragTarget::start;
+}
+
+void SlotView::updateMarkerHover(juce::Point<int> position)
+{
+    const auto nextTarget = dragTarget != DragTarget::none ? dragTarget : markerAt(position);
+    if (nextTarget == hoverTarget)
+        return;
+
+    hoverTarget = nextTarget;
+    setMouseCursor(hoverTarget == DragTarget::none ? juce::MouseCursor::NormalCursor
+                                                   : juce::MouseCursor::PointingHandCursor);
+    repaint(waveformArea.expanded(7, 2));
+}
+
 void SlotView::updateStartFromMouse(const juce::MouseEvent& event)
 {
     const auto area = getShiftedWaveformArea();
@@ -349,12 +435,10 @@ void SlotView::mouseDown(const juce::MouseEvent& event)
 {
     if (waveformArea.contains(event.getPosition()) && thumbnail.getTotalLength() > 0.0)
     {
-        const auto area = getShiftedWaveformArea();
-        const auto fade = processor.state.getRawParameterValue(
-            "slot" + juce::String(slot + 1) + ".fade")->load();
-        const auto fadeX = area.getX() + juce::roundToInt(fade * area.getWidth());
-        dragTarget = std::abs(event.getPosition().x - fadeX) <= 10
-            ? DragTarget::fade : DragTarget::start;
+        dragTarget = markerAt(event.getPosition());
+        if (dragTarget == DragTarget::none)
+            dragTarget = DragTarget::start;
+        updateMarkerHover(event.getPosition());
         if (auto* parameter = processor.state.getParameter(
                 "slot" + juce::String(slot + 1)
                     + (dragTarget == DragTarget::fade ? ".fade" : ".start"))) parameter->beginChangeGesture();
@@ -364,16 +448,33 @@ void SlotView::mouseDown(const juce::MouseEvent& event)
 
 void SlotView::mouseDrag(const juce::MouseEvent& event)
 {
-    if (dragTarget != DragTarget::none) updateStartFromMouse(event);
+    if (dragTarget != DragTarget::none)
+    {
+        updateStartFromMouse(event);
+        updateMarkerHover(event.getPosition());
+    }
 }
 
-void SlotView::mouseUp(const juce::MouseEvent&)
+void SlotView::mouseUp(const juce::MouseEvent& event)
 {
     if (dragTarget == DragTarget::none) return;
     if (auto* parameter = processor.state.getParameter(
             "slot" + juce::String(slot + 1)
                 + (dragTarget == DragTarget::fade ? ".fade" : ".start"))) parameter->endChangeGesture();
     dragTarget = DragTarget::none;
+    updateMarkerHover(event.getPosition());
+}
+
+void SlotView::mouseMove(const juce::MouseEvent& event) { updateMarkerHover(event.getPosition()); }
+
+void SlotView::mouseExit(const juce::MouseEvent&)
+{
+    if (dragTarget == DragTarget::none)
+    {
+        hoverTarget = DragTarget::none;
+        setMouseCursor(juce::MouseCursor::NormalCursor);
+        repaint(waveformArea.expanded(7, 2));
+    }
 }
 
 void SlotView::mouseWheelMove(const juce::MouseEvent& event,
@@ -537,10 +638,91 @@ SampleDicerAudioProcessorEditor::SampleDicerAudioProcessorEditor(SampleDicerAudi
     if (auto* constrainer = getConstrainer())
         constrainer->setFixedAspectRatio(static_cast<double>(designWidth) / designHeight);
     setSize(designWidth, designHeight);
+    beginUpdateCheck();
     startTimerHz(60);
 }
 
-SampleDicerAudioProcessorEditor::~SampleDicerAudioProcessorEditor() { setLookAndFeel(nullptr); }
+SampleDicerAudioProcessorEditor::~SampleDicerAudioProcessorEditor()
+{
+    updateDownload.reset();
+    updateResponseFile.deleteFile();
+    setLookAndFeel(nullptr);
+}
+
+void SampleDicerAudioProcessorEditor::beginUpdateCheck()
+{
+    const auto settingsOptions = updateSettingsOptions();
+    juce::PropertiesFile settings(settingsOptions);
+    const auto now = juce::Time::currentTimeMillis();
+    const auto lastCheck = settings.getValue("lastUpdateCheck").getLargeIntValue();
+    if (lastCheck > 0 && now - lastCheck < updateCheckIntervalMs)
+        return;
+    settings.setValue("lastUpdateCheck", juce::String(now));
+    settings.saveIfNeeded();
+
+    updateResponseFile = juce::File::getSpecialLocation(juce::File::tempDirectory)
+        .getNonexistentChildFile("sample-dicer-latest-release", ".json", false);
+    const auto headers = "Accept: application/vnd.github+json\r\n"
+                         "User-Agent: Sample-Dicer/" + juce::String(JucePlugin_VersionString) + "\r\n";
+    updateDownload = juce::URL(latestReleaseApi).downloadToFile(
+        updateResponseFile,
+        juce::URL::DownloadTaskOptions().withExtraHeaders(headers).withListener(this));
+}
+
+void SampleDicerAudioProcessorEditor::finished(juce::URL::DownloadTask* task, bool success)
+{
+    if (!success || task == nullptr || task->statusCode() != 200)
+    {
+        updateResponseFile.deleteFile();
+        return;
+    }
+
+    const auto response = juce::JSON::parse(updateResponseFile.loadFileAsString());
+    updateResponseFile.deleteFile();
+    const auto* object = response.getDynamicObject();
+    if (object == nullptr)
+        return;
+
+    const auto version = object->getProperty("tag_name").toString();
+    if (!isNewerVersion(version, JucePlugin_VersionString))
+        return;
+
+    auto releaseUrl = juce::URL(object->getProperty("html_url").toString());
+    if (releaseUrl.isEmpty())
+        releaseUrl = juce::URL(releasesUrl);
+    juce::MessageManager::callAsync(
+        [safeEditor = juce::Component::SafePointer<SampleDicerAudioProcessorEditor>(this),
+         version, releaseUrl]
+        {
+            if (safeEditor != nullptr)
+                safeEditor->showUpdateAvailable(version, releaseUrl);
+        });
+}
+
+void SampleDicerAudioProcessorEditor::showUpdateAvailable(const juce::String& version,
+                                                           const juce::URL& releaseUrl)
+{
+    juce::PropertiesFile settings(updateSettingsOptions());
+    if (settings.getValue("lastNotifiedRelease") == version)
+        return;
+    settings.setValue("lastNotifiedRelease", version);
+    settings.saveIfNeeded();
+
+    const auto message = "Sample Dicer " + version +
+        " is available. You are using version " + juce::String(JucePlugin_VersionString) + ".";
+    const auto box = juce::MessageBoxOptions()
+        .withIconType(juce::MessageBoxIconType::InfoIcon)
+        .withTitle("Sample Dicer update available")
+        .withMessage(message)
+        .withButton("Open Releases")
+        .withButton("Later")
+        .withParentComponent(this);
+    juce::AlertWindow::showAsync(box, [releaseUrl] (int result)
+    {
+        if (result == 1)
+            releaseUrl.launchInDefaultBrowser();
+    });
+}
 
 void SampleDicerAudioProcessorEditor::paint(juce::Graphics& g)
 {
