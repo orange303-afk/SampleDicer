@@ -1194,6 +1194,10 @@ SampleDicerAudioProcessorEditor::SampleDicerAudioProcessorEditor(SampleDicerAudi
     content.addAndMakeVisible(key);
     keyLink = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
         processor.state, "global.key", key);
+    roundRobin.setTooltip("Play one random loaded slot per trigger without immediate repeats");
+    content.addAndMakeVisible(roundRobin);
+    roundRobinLink = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
+        processor.state, "global.roundRobin", roundRobin);
     burstRateLabel.setText("RATE", juce::dontSendNotification);
     burstRateLabel.setFont(juce::FontOptions(9.5f, juce::Font::bold));
     burstRateLabel.setColour(juce::Label::textColourId, juce::Colour(0xff9299a5));
@@ -1292,6 +1296,7 @@ void SampleDicerAudioProcessorEditor::setInterfaceTextGlitch(bool enabled, uint3
     burst.setButtonText(text("BURST", 20));
     key.setButtonText(text("KEY", 21));
     pte.setButtonText(text("PTE", 22));
+    roundRobin.setButtonText(text("RR", 26));
     back.setButtonText(text("<< BACK", 23));
     samples.setButtonText(text("SAMPLES", 24));
     params.setButtonText(text("PARAMS", 25));
@@ -1341,7 +1346,7 @@ void SampleDicerAudioProcessorEditor::updateComponentColours()
     voicesLabel.setColour(juce::Label::textColourId, currentTheme.mutedText);
     burstRateLabel.setColour(juce::Label::textColourId, currentTheme.mutedText);
     masterLabel.setColour(juce::Label::textColourId, currentTheme.mutedText);
-    for (auto* toggle : { &burst, &pte, &key })
+    for (auto* toggle : { &burst, &pte, &key, &roundRobin })
     {
         toggle->setColour(juce::ToggleButton::textColourId, currentTheme.primaryText);
         toggle->setColour(juce::ToggleButton::tickColourId, currentTheme.accent);
@@ -1484,7 +1489,9 @@ void SampleDicerAudioProcessorEditor::resized()
     performanceRow.removeFromLeft(8);
     key.setBounds(performanceRow.removeFromLeft(68).reduced(0, 5));
     performanceRow.removeFromLeft(3);
-    pte.setBounds(performanceRow.removeFromLeft(70).reduced(0, 5));
+    pte.setBounds(performanceRow.removeFromLeft(57).reduced(0, 5));
+    performanceRow.removeFromLeft(2);
+    roundRobin.setBounds(performanceRow.reduced(0, 5));
     auto buttons = area.reduced(12, 0);
     auto generationButtons = buttons.removeFromTop(58);
     back.setBounds(generationButtons.removeFromLeft(82).reduced(0, 2));

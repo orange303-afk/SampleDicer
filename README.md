@@ -24,6 +24,7 @@ Four-layer one-shot sampler for AU, VST3 and standalone use. One MIDI note trigg
 - Hold-to-repeat Burst mode with adjustable 1–30 Hz rate
 - Per-trigger parameter evolution (PTE) with a real-time-safe audio path
 - Optional chromatic MIDI keytracking relative to note 60
+- Random Round Robin mode plays one loaded slot per trigger without immediate slot repeats
 - Per-slot LOCK controls to exclude layers from DICE and PTE
 - Per-slot random-sample and clear controls
 - Separate DICE, SAMPLES and PARAMS actions

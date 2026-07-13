@@ -36,10 +36,10 @@ private:
   float audioRandom01() noexcept;
   std::array<Slot,4> slots; juce::AudioFormatManager formats;
   std::array<RtParameters,4> rtParameters;
-  std::atomic<float>* rtVoices{}; std::atomic<float>* rtPte{}; std::atomic<float>* rtKey{}; std::atomic<float>* rtBurst{}; std::atomic<float>* rtBurstRate{}; std::atomic<float>* rtGlitchMode{};
+  std::atomic<float>* rtVoices{}; std::atomic<float>* rtPte{}; std::atomic<float>* rtKey{}; std::atomic<float>* rtRoundRobin{}; std::atomic<float>* rtBurst{}; std::atomic<float>* rtBurstRate{}; std::atomic<float>* rtGlitchMode{};
   std::atomic<float>* rtMasterGain{};
   std::atomic<float>* rtRandomVolume{}; std::atomic<float>* rtRandomPitch{}; std::atomic<float>* rtRandomStart{}; std::atomic<float>* rtRandomShift{};
-  juce::Random uiRandom; uint32_t audioRngState=0x9e3779b9u; double hostRate=44100; double burstCountdown=0; int heldNotes=0; int lastTriggeredNote=60; juce::CriticalSection lock;
+  juce::Random uiRandom; uint32_t audioRngState=0x9e3779b9u; double hostRate=44100; double burstCountdown=0; int heldNotes=0; int lastTriggeredNote=60; int lastRoundRobinSlot=-1; juce::CriticalSection lock;
   static constexpr int glitchDelayCapacity = 65536;
   static constexpr int glitchStutterCapacity = 8192;
   std::array<std::array<float, glitchDelayCapacity>, 2> glitchDelayBuffer {};

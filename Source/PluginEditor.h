@@ -179,11 +179,13 @@ private:
     juce::ToggleButton burst { "BURST" };
     juce::ToggleButton pte { "PTE" };
     juce::ToggleButton key { "KEY" };
+    juce::ToggleButton roundRobin { "RR" };
     DisplaySlider burstRate;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> voicesLink;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> burstLink;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> pteLink;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> keyLink;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> roundRobinLink;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> burstRateLink;
     std::array<DisplaySlider, 4> random;
     std::array<juce::Label, 4> randomLabels;
