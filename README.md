@@ -60,6 +60,11 @@ The plug-ins are created below `build/SampleDicer_artefacts/Release/`; automatic
 
 Ready-to-use macOS VST3, Audio Unit, standalone, and Windows x64 VST3 builds are available on the [Releases](https://github.com/orange303-afk/SampleDicer/releases) page.
 
+## Manual
+
+[Sample_Dicer_Manual_EN_v1.5.0.pdf](https://github.com/user-attachments/files/29986770/Sample_Dicer_Manual_EN_v1.5.0.pdf)
+[Sample_Dicer_Manual_RU_v1.5.0.pdf](https://github.com/user-attachments/files/29986773/Sample_Dicer_Manual_RU_v1.5.0.pdf)
+
 ## License
 
 Sample Dicer is free for noncommercial use under the
