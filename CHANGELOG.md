@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.0 — 2026-07-13
+
+- Smooth proportional interface resizing from 65% to 200%
+- Centred, non-stretching layout when a host requests a non-proportional window size
+- Hover highlighting and pointer feedback for Start and Fade markers
+- Separate selection of overlapping Start and Fade markers from the waveform's upper and lower halves
+- Once-daily background check for newer GitHub releases with an in-plug-in notification
+- Centred cryptocurrency donation details in the About window
+
 ## 1.2.0 — 2026-07-13
 
 - Start and fade-end markers can no longer cross
