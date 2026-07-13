@@ -62,8 +62,8 @@ Ready-to-use macOS VST3, Audio Unit, standalone, and Windows x64 VST3 builds are
 
 ## Manual
 
-[Sample_Dicer_Manual_EN_v1.5.0.pdf](https://github.com/user-attachments/files/29986770/Sample_Dicer_Manual_EN_v1.5.0.pdf)
-[Sample_Dicer_Manual_RU_v1.5.0.pdf](https://github.com/user-attachments/files/29986773/Sample_Dicer_Manual_RU_v1.5.0.pdf)
+- English: [Sample_Dicer_Manual_EN_v1.5.0.pdf](https://github.com/user-attachments/files/29986770/Sample_Dicer_Manual_EN_v1.5.0.pdf)
+- Russian: [Sample_Dicer_Manual_RU_v1.5.0.pdf](https://github.com/user-attachments/files/29986773/Sample_Dicer_Manual_RU_v1.5.0.pdf)
 
 ## License
 
