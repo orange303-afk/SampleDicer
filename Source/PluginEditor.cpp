@@ -58,6 +58,59 @@ const std::array<DicerTheme, 20>& availableThemes()
     return themes;
 }
 
+juce::String makeZalgoText(const juce::String& source, uint32_t seed)
+{
+    static constexpr std::array<juce_wchar, 18> marks {
+        0x0300, 0x0301, 0x0302, 0x0304, 0x0307, 0x0308,
+        0x0311, 0x0315, 0x031B, 0x0323, 0x0324, 0x0325,
+        0x032D, 0x0330, 0x0334, 0x0335, 0x034F, 0x035C
+    };
+    juce::Random random(static_cast<int64>(seed));
+    juce::String result;
+    for (auto character : source)
+    {
+        result += juce::String::charToString(character);
+        if (juce::CharacterFunctions::isLetterOrDigit(character) && random.nextFloat() < 0.72f)
+        {
+            const auto count = 1 + random.nextInt(3);
+            for (int i = 0; i < count; ++i)
+                result += juce::String::charToString(marks[static_cast<size_t>(random.nextInt(static_cast<int>(marks.size())))]);
+        }
+    }
+    return result;
+}
+
+DicerTheme makeGlitchTheme(juce::Random& random)
+{
+    const auto& source = availableThemes()[static_cast<size_t>(random.nextInt(static_cast<int>(availableThemes().size())))];
+    const auto invert = [] (juce::Colour colour)
+    {
+        return juce::Colour::fromRGB(static_cast<juce::uint8>(255 - colour.getRed()),
+                                     static_cast<juce::uint8>(255 - colour.getGreen()),
+                                     static_cast<juce::uint8>(255 - colour.getBlue()));
+    };
+    const auto wild = [&random]
+    {
+        return juce::Colour::fromHSV(random.nextFloat(), 0.88f + random.nextFloat() * 0.12f,
+                                     0.82f + random.nextFloat() * 0.18f, 1.0f);
+    };
+    auto result = source;
+    result.name = "GLITCH//" + source.name;
+    result.background = invert(source.background);
+    result.panel = invert(source.panel);
+    result.waveformBackground = invert(source.waveformBackground);
+    result.primaryText = invert(source.primaryText);
+    result.secondaryText = invert(source.secondaryText);
+    result.mutedText = wild();
+    result.controlTrack = invert(source.controlTrack);
+    result.button = invert(source.button);
+    result.accent = wild();
+    result.waveform = wild();
+    result.fade = wild();
+    result.playhead = wild();
+    return result;
+}
+
 void drawFadeCurve(juce::Graphics& g, int left, int right, juce::Rectangle<int> area,
                    float curve, bool fadeIn)
 {
@@ -167,12 +220,14 @@ private:
 class OptionsPanel : public juce::Component
 {
 public:
-    OptionsPanel(int initialScale, int initialTheme,
+    OptionsPanel(juce::AudioProcessorValueTreeState& state, int initialScale, int initialTheme,
                  std::function<void(int)> scaleCallback,
-                 std::function<void(int)> themeCallback)
+                 std::function<void(int)> themeCallback,
+                 std::function<void(bool)> glitchCallback)
         : scaleIndex(juce::jlimit(0, static_cast<int>(scalePresets.size()) - 1, initialScale)),
           themeIndex(juce::jlimit(0, static_cast<int>(availableThemes().size()) - 1, initialTheme)),
-          onScaleChanged(std::move(scaleCallback)), onThemeChanged(std::move(themeCallback))
+          onScaleChanged(std::move(scaleCallback)), onThemeChanged(std::move(themeCallback)),
+          onGlitchChanged(std::move(glitchCallback))
     {
         heading.setText("OPTIONS", juce::dontSendNotification);
         heading.setFont(juce::FontOptions(15.0f, juce::Font::bold));
@@ -192,14 +247,19 @@ public:
         scaleUp.onClick = [this] { changeScale(1); };
         themeDown.onClick = [this] { changeTheme(-1); };
         themeUp.onClick = [this] { changeTheme(1); };
-        const std::array<juce::Component*, 9> components {
+        glitch.setButtonText("GLITCH MODE");
+        glitch.setTooltip("Wild per-note visuals and realtime-safe delay, stutter and crackle processing");
+        glitch.onClick = [this] { if (onGlitchChanged) onGlitchChanged(glitch.getToggleState()); };
+        glitchLink = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
+            state, "global.glitchMode", glitch);
+        const std::array<juce::Component*, 10> components {
             &heading, &scaleTitle, &scaleValue, &themeTitle, &themeValue,
-            &scaleDown, &scaleUp, &themeDown, &themeUp
+            &scaleDown, &scaleUp, &themeDown, &themeUp, &glitch
         };
         for (auto* component : components)
             addAndMakeVisible(component);
         refresh();
-        setSize(350, 170);
+        setSize(350, 218);
     }
 
     void paint(juce::Graphics& g) override
@@ -217,6 +277,8 @@ public:
         layoutRow(area.removeFromTop(42), scaleTitle, scaleDown, scaleValue, scaleUp);
         area.removeFromTop(7);
         layoutRow(area.removeFromTop(42), themeTitle, themeDown, themeValue, themeUp);
+        area.removeFromTop(8);
+        glitch.setBounds(area.removeFromTop(35).reduced(8, 2));
     }
 
 private:
@@ -260,6 +322,9 @@ private:
             button->setColour(juce::TextButton::buttonColourId, theme.button);
             button->setColour(juce::TextButton::textColourOffId, theme.primaryText);
         }
+        glitch.setColour(juce::ToggleButton::textColourId, theme.primaryText);
+        glitch.setColour(juce::ToggleButton::tickColourId, theme.accent);
+        glitch.setColour(juce::ToggleButton::tickDisabledColourId, theme.controlTrack);
         repaint();
     }
 
@@ -267,7 +332,10 @@ private:
     DicerTheme theme;
     juce::Label heading, scaleTitle, scaleValue, themeTitle, themeValue;
     juce::TextButton scaleDown, scaleUp, themeDown, themeUp;
+    juce::ToggleButton glitch;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> glitchLink;
     std::function<void(int)> onScaleChanged, onThemeChanged;
+    std::function<void(bool)> onGlitchChanged;
 };
 }
 
@@ -517,6 +585,22 @@ void SlotView::setTheme(const DicerTheme& newTheme)
     repaint();
 }
 
+void SlotView::setGlitchVisuals(bool enabled, uint32_t seed)
+{
+    glitchVisuals = enabled;
+    glitchSeed = seed + static_cast<uint32_t>(slot) * 0x9e3779b9u;
+    const std::array<juce::String, 5> names { "VOLUME", "PITCH", "START", "SHIFT", "FADE" };
+    title.setText(enabled ? makeZalgoText("SLOT " + juce::String(slot + 1), glitchSeed)
+                          : "SLOT " + juce::String(slot + 1),
+                  juce::dontSendNotification);
+    for (size_t i = 0; i < labels.size(); ++i)
+        labels[i].setText(enabled ? makeZalgoText(names[i], glitchSeed + static_cast<uint32_t>(i * 97))
+                                  : names[i],
+                          juce::dontSendNotification);
+    refresh();
+    repaint();
+}
+
 void SlotView::paint(juce::Graphics& g)
 {
     g.setColour(theme.panel);
@@ -540,6 +624,39 @@ void SlotView::paint(juce::Graphics& g)
         g.setColour(theme.waveform);
         thumbnail.drawChannels(g, shiftedArea.reduced(5, 3), 0.0,
                                thumbnail.getTotalLength(), waveformScale);
+        if (glitchVisuals)
+        {
+            auto state = glitchSeed == 0 ? 0x6d2b79f5u : glitchSeed;
+            const auto random01 = [&state]()
+            {
+                state ^= state << 13; state ^= state >> 17; state ^= state << 5;
+                return static_cast<float>(state & 0x00ffffffu) / 16777215.0f;
+            };
+            for (int artifact = 0; artifact < 8; ++artifact)
+            {
+                const auto height = 2 + juce::roundToInt(random01() * 7.0f);
+                const auto y = shiftedArea.getY() + juce::roundToInt(
+                    random01() * static_cast<float>(juce::jmax(1, shiftedArea.getHeight() - height)));
+                auto slice = juce::Rectangle<int>(shiftedArea.getX(), y, shiftedArea.getWidth(), height);
+                juce::Graphics::ScopedSaveState saved(g);
+                g.reduceClipRegion(slice);
+                const auto xOffset = juce::roundToInt((random01() * 2.0f - 1.0f) * 24.0f);
+                g.setColour((artifact % 2 == 0 ? theme.accent : theme.fade).withAlpha(0.72f));
+                thumbnail.drawChannels(g, shiftedArea.reduced(5, 3).translated(xOffset, 0), 0.0,
+                                       thumbnail.getTotalLength(), waveformScale * (1.0f + random01()));
+            }
+            for (int block = 0; block < 7; ++block)
+            {
+                const auto width = 3 + juce::roundToInt(random01() * 34.0f);
+                const auto height = 1 + juce::roundToInt(random01() * 5.0f);
+                const auto x = shiftedArea.getX() + juce::roundToInt(
+                    random01() * static_cast<float>(juce::jmax(1, shiftedArea.getWidth() - width)));
+                const auto y = shiftedArea.getY() + juce::roundToInt(
+                    random01() * static_cast<float>(juce::jmax(1, shiftedArea.getHeight() - height)));
+                g.setColour((block % 2 == 0 ? theme.playhead : theme.waveform).withAlpha(0.58f));
+                g.fillRect(x, y, width, height);
+            }
+        }
 
         const auto fade = processor.state.getRawParameterValue(
             "slot" + juce::String(slot + 1) + ".fade")->load();
@@ -966,7 +1083,16 @@ void SlotView::filesDropped(const juce::StringArray& files, int, int)
 void SlotView::refresh()
 {
     const auto current = processor.sampleFile(slot);
-    file.setText(processor.sampleName(slot), juce::dontSendNotification);
+    const auto name = processor.sampleName(slot);
+    if (name != displayedSampleName || glitchVisuals != displayedWithGlitch
+        || (glitchVisuals && glitchSeed != displayedGlitchSeed))
+    {
+        displayedSampleName = name;
+        displayedWithGlitch = glitchVisuals;
+        displayedGlitchSeed = glitchSeed;
+        file.setText(glitchVisuals ? makeZalgoText(name, glitchSeed + 0x51ed270bu) : name,
+                     juce::dontSendNotification);
+    }
     if (current != displayedFile)
     {
         displayedFile = current;
@@ -985,7 +1111,10 @@ SampleDicerAudioProcessorEditor::SampleDicerAudioProcessorEditor(SampleDicerAudi
                                     uiSettings.getIntValue("uiScalePreset", 1));
     themeIndex = juce::jlimit(0, static_cast<int>(availableThemes().size()) - 1,
                               uiSettings.getIntValue("uiTheme", 0));
-    currentTheme = availableThemes()[static_cast<size_t>(themeIndex)];
+    normalTheme = availableThemes()[static_cast<size_t>(themeIndex)];
+    currentTheme = normalTheme;
+    glitchModeWasEnabled = processor.state.getRawParameterValue("global.glitchMode")->load() > 0.5f;
+    lastGlitchGeneration = processor.glitchVisualGeneration();
     lookAndFeel.setTheme(currentTheme);
     setLookAndFeel(&lookAndFeel);
     content.setBounds(0, 0, designWidth, designHeight);
@@ -1103,7 +1232,7 @@ SampleDicerAudioProcessorEditor::~SampleDicerAudioProcessorEditor()
 void SampleDicerAudioProcessorEditor::showOptions()
 {
     auto panel = std::make_unique<OptionsPanel>(
-        scalePresetIndex, themeIndex,
+        processor.state, scalePresetIndex, themeIndex,
         [safeEditor = juce::Component::SafePointer<SampleDicerAudioProcessorEditor>(this)] (int index)
         {
             if (safeEditor != nullptr) safeEditor->applyScalePreset(index);
@@ -1111,6 +1240,10 @@ void SampleDicerAudioProcessorEditor::showOptions()
         [safeEditor = juce::Component::SafePointer<SampleDicerAudioProcessorEditor>(this)] (int index)
         {
             if (safeEditor != nullptr) safeEditor->applyTheme(index);
+        },
+        [safeEditor = juce::Component::SafePointer<SampleDicerAudioProcessorEditor>(this)] (bool enabled)
+        {
+            if (safeEditor != nullptr) safeEditor->setGlitchVisualsEnabled(enabled);
         });
     juce::CallOutBox::launchAsynchronously(std::move(panel), options.getScreenBounds(), nullptr);
 }
@@ -1131,7 +1264,8 @@ void SampleDicerAudioProcessorEditor::applyScalePreset(int index, bool save)
 void SampleDicerAudioProcessorEditor::applyTheme(int index, bool save)
 {
     themeIndex = juce::jlimit(0, static_cast<int>(availableThemes().size()) - 1, index);
-    currentTheme = availableThemes()[static_cast<size_t>(themeIndex)];
+    normalTheme = availableThemes()[static_cast<size_t>(themeIndex)];
+    currentTheme = glitchVisualActive && glitchModeWasEnabled ? makeGlitchTheme(visualRandom) : normalTheme;
     updateComponentColours();
     if (save)
     {
@@ -1139,6 +1273,60 @@ void SampleDicerAudioProcessorEditor::applyTheme(int index, bool save)
         settings.setValue("uiTheme", themeIndex);
         settings.saveIfNeeded();
     }
+}
+
+void SampleDicerAudioProcessorEditor::setInterfaceTextGlitch(bool enabled, uint32_t seed)
+{
+    const auto text = [enabled, seed] (const juce::String& source, uint32_t offset)
+    {
+        return enabled ? makeZalgoText(source, seed + offset) : source;
+    };
+    glitchTitleText = text("SAMPLE DICER", 1);
+    randomTitle.setText(text("RANDOM AMOUNT", 2), juce::dontSendNotification);
+    voicesLabel.setText(text("VOICES", 3), juce::dontSendNotification);
+    burstRateLabel.setText(text("RATE", 4), juce::dontSendNotification);
+    masterLabel.setText(text("MASTER", 5), juce::dontSendNotification);
+    const std::array<juce::String, 4> randomNames { "VOLUME", "PITCH", "START", "SHIFT" };
+    for (size_t i = 0; i < randomLabels.size(); ++i)
+        randomLabels[i].setText(text(randomNames[i], 10 + static_cast<uint32_t>(i)), juce::dontSendNotification);
+    burst.setButtonText(text("BURST", 20));
+    key.setButtonText(text("KEY", 21));
+    pte.setButtonText(text("PTE", 22));
+    back.setButtonText(text("<< BACK", 23));
+    samples.setButtonText(text("SAMPLES", 24));
+    params.setButtonText(text("PARAMS", 25));
+    for (size_t i = 0; i < slots.size(); ++i)
+        if (slots[i] != nullptr) slots[i]->setGlitchVisuals(enabled, seed + static_cast<uint32_t>(i * 131));
+}
+
+void SampleDicerAudioProcessorEditor::setGlitchVisualsEnabled(bool enabled)
+{
+    glitchModeWasEnabled = enabled;
+    if (enabled)
+    {
+        lastGlitchGeneration = processor.glitchVisualGeneration();
+        return;
+    }
+    glitchFlashFrames = 0;
+    glitchVisualActive = false;
+    currentTheme = normalTheme;
+    setInterfaceTextGlitch(false, 0);
+    updateComponentColours();
+}
+
+void SampleDicerAudioProcessorEditor::triggerGlitchVisuals(uint32_t generation)
+{
+    glitchVisualActive = true;
+    glitchFlashFrames = 10;
+    glitchVisualSeed = generation ^ static_cast<uint32_t>(visualRandom.nextInt());
+    setInterfaceTextGlitch(true, glitchVisualSeed);
+    applyGlitchThemeFrame();
+}
+
+void SampleDicerAudioProcessorEditor::applyGlitchThemeFrame()
+{
+    currentTheme = makeGlitchTheme(visualRandom);
+    updateComponentColours();
 }
 
 void SampleDicerAudioProcessorEditor::updateComponentColours()
@@ -1247,7 +1435,7 @@ void SampleDicerAudioProcessorEditor::paint(juce::Graphics& g)
     g.addTransform(content.getTransform());
     g.setColour(currentTheme.accent);
     g.setFont(juce::FontOptions(25.0f, juce::Font::bold));
-    g.drawText("SAMPLE DICER", 20, 10, 300, 36, juce::Justification::centredLeft);
+    g.drawText(glitchTitleText, 20, 10, 360, 36, juce::Justification::centredLeft);
 }
 
 void SampleDicerAudioProcessorEditor::resized()
@@ -1309,5 +1497,20 @@ void SampleDicerAudioProcessorEditor::resized()
 
 void SampleDicerAudioProcessorEditor::timerCallback()
 {
+    const auto glitchEnabled = processor.state.getRawParameterValue("global.glitchMode")->load() > 0.5f;
+    if (glitchEnabled != glitchModeWasEnabled)
+        setGlitchVisualsEnabled(glitchEnabled);
+    const auto generation = processor.glitchVisualGeneration();
+    if (glitchEnabled && generation != lastGlitchGeneration)
+    {
+        lastGlitchGeneration = generation;
+        triggerGlitchVisuals(generation);
+    }
+    if (glitchEnabled && glitchFlashFrames > 0)
+    {
+        --glitchFlashFrames;
+        if ((glitchFlashFrames & 1) == 0)
+            applyGlitchThemeFrame();
+    }
     for (auto& view : slots) if (view != nullptr) { view->refresh(); view->repaint(); }
 }

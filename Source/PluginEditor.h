@@ -94,6 +94,7 @@ public:
     void filesDropped(const juce::StringArray&, int, int) override;
     void refresh();
     void setTheme(const DicerTheme&);
+    void setGlitchVisuals(bool enabled, uint32_t seed);
     void mouseDown(const juce::MouseEvent&) override;
     void mouseDrag(const juce::MouseEvent&) override;
     void mouseUp(const juce::MouseEvent&) override;
@@ -124,12 +125,17 @@ private:
     juce::AudioThumbnailCache thumbnailCache { 8 };
     juce::AudioThumbnail thumbnail { 512, thumbnailFormats, thumbnailCache };
     juce::File displayedFile;
+    juce::String displayedSampleName;
+    uint32_t displayedGlitchSeed = 0;
+    bool displayedWithGlitch = false;
     juce::Rectangle<int> waveformArea;
     DragTarget dragTarget = DragTarget::none;
     DragTarget hoverTarget = DragTarget::none;
     float rangeDragMouseFraction = 0.0f;
     float rangeDragStart = 0.0f;
     float rangeDragFade = 1.0f;
+    bool glitchVisuals = false;
+    uint32_t glitchSeed = 0;
     DicerTheme theme;
 };
 
@@ -151,6 +157,10 @@ private:
     void showOptions();
     void applyScalePreset(int index, bool save = true);
     void applyTheme(int index, bool save = true);
+    void setGlitchVisualsEnabled(bool enabled);
+    void triggerGlitchVisuals(uint32_t generation);
+    void applyGlitchThemeFrame();
+    void setInterfaceTextGlitch(bool enabled, uint32_t seed);
     void updateComponentColours();
     SampleDicerAudioProcessor& processor;
     DicerLookAndFeel lookAndFeel;
@@ -180,8 +190,16 @@ private:
     std::array<std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>, 4> randomLinks;
     juce::File updateResponseFile;
     std::unique_ptr<juce::URL::DownloadTask> updateDownload;
+    DicerTheme normalTheme;
     DicerTheme currentTheme;
     int scalePresetIndex = 1;
     int themeIndex = 0;
+    juce::Random visualRandom;
+    juce::String glitchTitleText { "SAMPLE DICER" };
+    uint32_t lastGlitchGeneration = 0;
+    uint32_t glitchVisualSeed = 0;
+    int glitchFlashFrames = 0;
+    bool glitchVisualActive = false;
+    bool glitchModeWasEnabled = false;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SampleDicerAudioProcessorEditor)
 };
