@@ -22,20 +22,20 @@ public:
   void back();
   bool canGoBack() const noexcept { return hasPreviousGeneration; }
 private:
-  struct Voice { double position=-1; int delay=0; float velocity=1; float gainDb=0; float pitch=0; float start=0; float shift=0; float fade=1; uint32_t generation=0; bool playing=false; };
+  struct Voice { double position=-1; int delay=0; float velocity=1; float gainDb=0; float pitch=0; float start=0; float shift=0; float fade=1; float fadeLengthMs=10; uint32_t generation=0; bool playing=false; };
   struct Slot { juce::AudioBuffer<float> audio; juce::File file; double sourceRate=44100; std::array<Voice,16> voices; int nextVoice=0; int displayVoice=-1; std::atomic<float> displayPosition{-1.f}; std::atomic<bool> sampleReady{false}; std::atomic<uint32_t> sampleGeneration{0}; };
   struct Generation { std::array<juce::File,4> files; std::array<std::array<float,4>,4> values{}; };
-  struct RtParameters { std::atomic<float>* gain{}; std::atomic<float>* pitch{}; std::atomic<float>* start{}; std::atomic<float>* shift{}; std::atomic<float>* fade{}; std::atomic<float>* locked{}; };
+  struct RtParameters { std::atomic<float>* gain{}; std::atomic<float>* pitch{}; std::atomic<float>* start{}; std::atomic<float>* shift{}; std::atomic<float>* fade{}; std::atomic<float>* fadeLength{}; std::atomic<float>* locked{}; };
   static juce::AudioProcessorValueTreeState::ParameterLayout layout();
-  juce::String id(int,const juce::String&) const; void triggerAll(float velocity); void renderVoices(juce::AudioBuffer<float>&);
+  juce::String id(int,const juce::String&) const; void triggerAll(float velocity,int midiNote); void renderVoices(juce::AudioBuffer<float>&);
   void captureGeneration();
   void clearSample(int slot);
   float audioRandom01() noexcept;
   std::array<Slot,4> slots; juce::AudioFormatManager formats;
   std::array<RtParameters,4> rtParameters;
-  std::atomic<float>* rtVoices{}; std::atomic<float>* rtPte{}; std::atomic<float>* rtBurst{}; std::atomic<float>* rtBurstRate{};
+  std::atomic<float>* rtVoices{}; std::atomic<float>* rtPte{}; std::atomic<float>* rtKey{}; std::atomic<float>* rtBurst{}; std::atomic<float>* rtBurstRate{};
   std::atomic<float>* rtRandomVolume{}; std::atomic<float>* rtRandomPitch{}; std::atomic<float>* rtRandomStart{}; std::atomic<float>* rtRandomShift{};
-  juce::Random uiRandom; uint32_t audioRngState=0x9e3779b9u; double hostRate=44100; double burstCountdown=0; int heldNotes=0; juce::CriticalSection lock;
+  juce::Random uiRandom; uint32_t audioRngState=0x9e3779b9u; double hostRate=44100; double burstCountdown=0; int heldNotes=0; int lastTriggeredNote=60; juce::CriticalSection lock;
   Generation previousGeneration; bool hasPreviousGeneration=false;
   std::unique_ptr<juce::PropertiesFile> settings;
   JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SampleDicerAudioProcessor)

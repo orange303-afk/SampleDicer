@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0 — 2026-07-13
+
+- Start and fade-end markers can no longer cross
+- Adjustable fade duration by scrolling over the fade area in the waveform
+- Visual fade envelope with duration feedback on every waveform
+- Optional KEY chromatic MIDI keytracking relative to note 60
+- Donate link and BTC, ETH, and USDT ERC20 details in the About window
+
 ## 1.1.0 — 2026-07-12
 
 - Smooth 60 Hz waveform playheads

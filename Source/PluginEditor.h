@@ -49,6 +49,7 @@ public:
     void mouseDown(const juce::MouseEvent&) override;
     void mouseDrag(const juce::MouseEvent&) override;
     void mouseUp(const juce::MouseEvent&) override;
+    void mouseWheelMove(const juce::MouseEvent&, const juce::MouseWheelDetails&) override;
 
 private:
     void changeListenerCallback(juce::ChangeBroadcaster*) override { repaint(); }
@@ -93,10 +94,12 @@ private:
     juce::ComboBox voices;
     juce::ToggleButton burst { "BURST" };
     juce::ToggleButton pte { "PTE" };
+    juce::ToggleButton key { "KEY" };
     DisplaySlider burstRate;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> voicesLink;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> burstLink;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> pteLink;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> keyLink;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> burstRateLink;
     std::array<DisplaySlider, 4> random;
     std::array<juce::Label, 4> randomLabels;

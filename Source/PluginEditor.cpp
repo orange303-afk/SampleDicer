@@ -12,7 +12,8 @@ public:
     AboutPanel()
         : website("ilyaorange.tilda.ws", juce::URL("https://ilyaorange.tilda.ws")),
           bandcamp("ilyaorange.bandcamp.com", juce::URL("https://ilyaorange.bandcamp.com")),
-          gumroad("ilyaorange.gumroad.com", juce::URL("https://ilyaorange.gumroad.com"))
+          gumroad("ilyaorange.gumroad.com", juce::URL("https://ilyaorange.gumroad.com")),
+          donate("Donate via PayPal", juce::URL("https://www.paypal.com/paypalme/ilyaorange303"))
     {
         title.setText("Sample Dicer " + juce::String(JucePlugin_VersionString) + " by Ilya Orange",
                       juce::dontSendNotification);
@@ -20,12 +21,24 @@ public:
         title.setFont(juce::FontOptions(15.0f, juce::Font::bold));
         title.setColour(juce::Label::textColourId, juce::Colour(0xfff0f1f4));
         addAndMakeVisible(title);
-        for (auto* link : { &website, &bandcamp, &gumroad })
+        for (auto* link : { &website, &bandcamp, &gumroad, &donate })
         {
             link->setColour(juce::HyperlinkButton::textColourId, juce::Colour(accent));
             addAndMakeVisible(link);
         }
-        setSize(330, 155);
+        crypto.setMultiLine(true);
+        crypto.setReadOnly(true);
+        crypto.setScrollbarsShown(false);
+        crypto.setColour(juce::TextEditor::backgroundColourId, juce::Colours::transparentBlack);
+        crypto.setColour(juce::TextEditor::outlineColourId, juce::Colours::transparentBlack);
+        crypto.setColour(juce::TextEditor::textColourId, juce::Colour(0xffd6dae2));
+        crypto.setFont(juce::FontOptions(12.0f));
+        crypto.setText("BTC: 3PZSPAgXpLUtnH2LH9TmxjizVUETHPa9cW\n\n"
+                       "ETH: 0x6144548f3f6071136fdf18134a99345cf12ae6b5\n\n"
+                       "USDT ERC20: 0x0f49f2cddf673214646a3154f60aa0c63a414ad3",
+                       false);
+        addAndMakeVisible(crypto);
+        setSize(520, 285);
     }
 
     void paint(juce::Graphics& g) override
@@ -38,13 +51,16 @@ public:
         auto area = getLocalBounds().reduced(14);
         title.setBounds(area.removeFromTop(31));
         area.removeFromTop(3);
-        for (auto* link : { &website, &bandcamp, &gumroad })
-            link->setBounds(area.removeFromTop(29));
+        for (auto* link : { &website, &bandcamp, &gumroad, &donate })
+            link->setBounds(area.removeFromTop(27));
+        area.removeFromTop(5);
+        crypto.setBounds(area);
     }
 
 private:
     juce::Label title;
-    juce::HyperlinkButton website, bandcamp, gumroad;
+    juce::HyperlinkButton website, bandcamp, gumroad, donate;
+    juce::TextEditor crypto;
 };
 }
 
@@ -176,6 +192,26 @@ SlotView::SlotView(SampleDicerAudioProcessor& p, int index) : processor(p), slot
         links[k] = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
             processor.state, "slot" + juce::String(index + 1) + "." + ids[k], knobs[k]);
     }
+    knobs[2].onValueChange = [this]
+    {
+        const auto start = static_cast<float>(knobs[2].getValue());
+        const auto fade = processor.state.getRawParameterValue(
+            "slot" + juce::String(slot + 1) + ".fade")->load();
+        if (start > fade)
+            if (auto* parameter = processor.state.getParameter(
+                    "slot" + juce::String(slot + 1) + ".fade"))
+                parameter->setValueNotifyingHost(parameter->convertTo0to1(start));
+    };
+    knobs[4].onValueChange = [this]
+    {
+        const auto fade = static_cast<float>(knobs[4].getValue());
+        const auto start = processor.state.getRawParameterValue(
+            "slot" + juce::String(slot + 1) + ".start")->load();
+        if (fade < start)
+            if (auto* parameter = processor.state.getParameter(
+                    "slot" + juce::String(slot + 1) + ".start"))
+                parameter->setValueNotifyingHost(parameter->convertTo0to1(fade));
+    };
     previous.onClick = [this] { processor.browse(slot, -1); refresh(); };
     next.onClick = [this] { processor.browse(slot, 1); refresh(); };
     refresh();
@@ -202,8 +238,10 @@ void SlotView::paint(juce::Graphics& g)
         g.setColour(juce::Colour(waveform));
         thumbnail.drawChannels(g, shiftedArea.reduced(5, 3), 0.0, thumbnail.getTotalLength(), 1.0f);
 
-        const auto start = processor.state.getRawParameterValue(
-            "slot" + juce::String(slot + 1) + ".start")->load();
+        const auto fade = processor.state.getRawParameterValue(
+            "slot" + juce::String(slot + 1) + ".fade")->load();
+        const auto start = juce::jmin(processor.state.getRawParameterValue(
+            "slot" + juce::String(slot + 1) + ".start")->load(), fade);
         const auto startX = shiftedArea.getX() + juce::roundToInt(start * shiftedArea.getWidth());
         g.setColour(juce::Colours::white.withAlpha(0.85f));
         g.drawVerticalLine(startX, static_cast<float>(waveformArea.getY() + 2),
@@ -214,9 +252,34 @@ void SlotView::paint(juce::Graphics& g)
                            static_cast<float>(startX), static_cast<float>(waveformArea.getY() + 7));
         g.fillPath(marker);
 
-        const auto fade = processor.state.getRawParameterValue(
-            "slot" + juce::String(slot + 1) + ".fade")->load();
         const auto fadeX = shiftedArea.getX() + juce::roundToInt(fade * shiftedArea.getWidth());
+        const auto fadeLengthMs = processor.state.getRawParameterValue(
+            "slot" + juce::String(slot + 1) + ".fadeLength")->load();
+        const auto fadeFraction = thumbnail.getTotalLength() > 0.0
+            ? static_cast<float>((fadeLengthMs * 0.001) / thumbnail.getTotalLength()) : 0.0f;
+        const auto fadeStartX = shiftedArea.getX() + juce::roundToInt(
+            juce::jmax(start, fade - fadeFraction) * shiftedArea.getWidth());
+        if (fadeStartX < fadeX)
+        {
+            juce::ColourGradient fadeGradient(juce::Colour(0xffe35f6f).withAlpha(0.02f),
+                                               static_cast<float>(fadeStartX), 0.0f,
+                                               juce::Colour(0xffe35f6f).withAlpha(0.48f),
+                                               static_cast<float>(fadeX), 0.0f, false);
+            g.setGradientFill(fadeGradient);
+            g.fillRect(juce::Rectangle<int>(fadeStartX, waveformArea.getY(),
+                                            fadeX - fadeStartX, waveformArea.getHeight()));
+            g.setColour(juce::Colour(0xffe35f6f).withAlpha(0.75f));
+            g.drawLine(static_cast<float>(fadeStartX), static_cast<float>(waveformArea.getY() + 3),
+                       static_cast<float>(fadeX), static_cast<float>(waveformArea.getBottom() - 3), 1.5f);
+            if (fadeX - fadeStartX > 36)
+            {
+                g.setFont(juce::FontOptions(9.0f, juce::Font::bold));
+                g.drawText(juce::String(fadeLengthMs, 0) + " ms",
+                           juce::Rectangle<int>(fadeStartX, waveformArea.getY(),
+                                                fadeX - fadeStartX, 13),
+                           juce::Justification::centred);
+            }
+        }
         if (fadeX < shiftedArea.getRight())
         {
             g.setColour(juce::Colour(0xffe35f6f).withAlpha(0.18f));
@@ -263,9 +326,14 @@ juce::Rectangle<int> SlotView::getShiftedWaveformArea() const
 void SlotView::updateStartFromMouse(const juce::MouseEvent& event)
 {
     const auto area = getShiftedWaveformArea();
-    const auto fraction = juce::jlimit(dragTarget == DragTarget::fade ? 0.01f : 0.0f,
-        dragTarget == DragTarget::fade ? 1.0f : 0.99f,
-        static_cast<float>(event.position.x - area.getX()) / static_cast<float>(juce::jmax(1, area.getWidth())));
+    const auto rawFraction = static_cast<float>(event.position.x - area.getX())
+        / static_cast<float>(juce::jmax(1, area.getWidth()));
+    const auto other = processor.state.getRawParameterValue(
+        "slot" + juce::String(slot + 1)
+            + (dragTarget == DragTarget::fade ? ".start" : ".fade"))->load();
+    const auto fraction = dragTarget == DragTarget::fade
+        ? juce::jlimit(juce::jmax(0.01f, other), 1.0f, rawFraction)
+        : juce::jlimit(0.0f, juce::jmin(0.99f, other), rawFraction);
     if (auto* parameter = processor.state.getParameter(
             "slot" + juce::String(slot + 1)
                 + (dragTarget == DragTarget::fade ? ".fade" : ".start")))
@@ -302,6 +370,36 @@ void SlotView::mouseUp(const juce::MouseEvent&)
             "slot" + juce::String(slot + 1)
                 + (dragTarget == DragTarget::fade ? ".fade" : ".start"))) parameter->endChangeGesture();
     dragTarget = DragTarget::none;
+}
+
+void SlotView::mouseWheelMove(const juce::MouseEvent& event,
+                              const juce::MouseWheelDetails& wheel)
+{
+    if (!waveformArea.contains(event.getPosition()) || thumbnail.getTotalLength() <= 0.0)
+        return;
+    const auto area = getShiftedWaveformArea();
+    const auto fade = processor.state.getRawParameterValue(
+        "slot" + juce::String(slot + 1) + ".fade")->load();
+    const auto length = processor.state.getRawParameterValue(
+        "slot" + juce::String(slot + 1) + ".fadeLength")->load();
+    const auto fadeFraction = static_cast<float>((length * 0.001) / thumbnail.getTotalLength());
+    const auto start = processor.state.getRawParameterValue(
+        "slot" + juce::String(slot + 1) + ".start")->load();
+    const auto fadeX = area.getX() + juce::roundToInt(fade * area.getWidth());
+    const auto fadeStartX = area.getX() + juce::roundToInt(
+        juce::jmax(start, fade - fadeFraction) * area.getWidth());
+    if (event.getPosition().x < fadeStartX - 8 || event.getPosition().x > fadeX + 8)
+        return;
+    if (auto* parameter = processor.state.getParameter(
+            "slot" + juce::String(slot + 1) + ".fadeLength"))
+    {
+        const auto delta = wheel.deltaY != 0.0f ? wheel.deltaY : wheel.deltaX;
+        const auto nextLength = juce::jlimit(1.0f, 250.0f, length + delta * 80.0f);
+        parameter->beginChangeGesture();
+        parameter->setValueNotifyingHost(parameter->convertTo0to1(nextLength));
+        parameter->endChangeGesture();
+        repaint();
+    }
 }
 
 void SlotView::resized()
@@ -403,6 +501,12 @@ SampleDicerAudioProcessorEditor::SampleDicerAudioProcessorEditor(SampleDicerAudi
     addAndMakeVisible(pte);
     pteLink = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
         processor.state, "global.pte", pte);
+    key.setColour(juce::ToggleButton::textColourId, juce::Colour(0xffdfe3ea));
+    key.setColour(juce::ToggleButton::tickColourId, juce::Colour(accent));
+    key.setTooltip("Chromatic keytracking relative to MIDI note 60 (middle C)");
+    addAndMakeVisible(key);
+    keyLink = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
+        processor.state, "global.key", key);
     burstRateLabel.setText("RATE", juce::dontSendNotification);
     burstRateLabel.setFont(juce::FontOptions(9.5f, juce::Font::bold));
     burstRateLabel.setColour(juce::Label::textColourId, juce::Colour(0xff9299a5));
@@ -464,6 +568,8 @@ void SampleDicerAudioProcessorEditor::resized()
     burstRateLabel.setBounds(rateArea.removeFromLeft(34));
     burstRate.setBounds(rateArea);
     performanceRow.removeFromLeft(8);
+    key.setBounds(performanceRow.removeFromLeft(68).reduced(0, 5));
+    performanceRow.removeFromLeft(3);
     pte.setBounds(performanceRow.removeFromLeft(70).reduced(0, 5));
     auto buttons = area.reduced(12, 0);
     auto generationButtons = buttons.removeFromTop(58);

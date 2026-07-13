@@ -11,10 +11,12 @@ Four-layer one-shot sampler for AU, VST3 and standalone use. One MIDI note trigg
 - Refined arc-style controls with parameter units
 - Per-slot volume, pitch, draggable start point, positive shift (0–250 ms), and fade-end controls
 - Smooth real-time playheads and visual start, shift, and fade editing on every waveform
+- Non-crossing Start/Fade markers and mouse-wheel fade-duration editing
 - MIDI note-on triggering
 - Selectable 1–16 voice polyphony
 - Hold-to-repeat Burst mode with adjustable 1–30 Hz rate
 - Per-trigger parameter evolution (PTE) with a real-time-safe audio path
+- Optional chromatic MIDI keytracking relative to note 60
 - Per-slot LOCK controls to exclude layers from DICE and PTE
 - Separate DICE, SAMPLES and PARAMS actions
 - BACK recalls the previous generated combination
