@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(SampleDicer VERSION 1.3.0 LANGUAGES C CXX)
+project(SampleDicer VERSION 1.4.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/JUCE/CMakeLists.txt")
   add_subdirectory(JUCE)

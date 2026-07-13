@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.4.0 — 2026-07-13
+
+- Options panel with persistent 60%, 100%, 120%, 150%, and 200% interface scale presets
+- Twenty persistent colour schemes, including dark and light themes
+- Real-time-safe master volume control
+- Visual fade-in and fade-out curves with Option/Alt + mouse-wheel curve shaping
+- Draggable Start–End waveform ranges that preserve their length and contract at waveform edges
+- Mouse-wheel slot volume control from the selected waveform range
+- Waveform amplitude display linked to each slot's volume
+- Per-slot random sample buttons with animated dice faces
+- Per-slot clear buttons
+- Theme-aware About and Options panels
+
 ## 1.3.0 — 2026-07-13
 
 - Smooth proportional interface resizing from 65% to 200%
