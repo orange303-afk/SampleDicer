@@ -39,10 +39,20 @@ class DisplaySlider : public juce::Slider
 {
 public:
     void setDisplayScale(double newScale) { displayScale = newScale; }
+    void setShiftFineSteps(double coarse, double fine) { coarseStep = coarse; fineStep = fine; }
+    void setAdaptiveDecimalDisplay(bool enabled) { adaptiveDecimalDisplay = enabled; }
     juce::String getTextFromValue(double value) override;
     double getValueFromText(const juce::String& text) override;
+    double snapValue(double attemptedValue, DragMode dragMode) override;
+    void mouseDown(const juce::MouseEvent&) override;
+    void mouseDrag(const juce::MouseEvent&) override;
+    void mouseUp(const juce::MouseEvent&) override;
+    void mouseWheelMove(const juce::MouseEvent&, const juce::MouseWheelDetails&) override;
 private:
     double displayScale = 1.0;
+    double coarseStep = 0.0, fineStep = 0.0;
+    bool fineStepActive = false;
+    bool adaptiveDecimalDisplay = false;
 };
 
 class DiceButton : public juce::Button

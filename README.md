@@ -13,7 +13,8 @@ Four-layer one-shot sampler for AU, VST3 and standalone use. One MIDI note trigg
 - Optional Glitch Mode with per-note inverted colour flashes, regenerated Zalgo text,
   waveform artefacts, randomized delays, stutters, crackles and sample-hold glitches
 - Refined arc-style controls with parameter units
-- Per-slot volume, pitch, draggable start point, positive shift (0–250 ms), and fade-end controls
+- Per-slot volume, whole-semitone pitch with Shift fine mode (0.1 st), draggable start point,
+  positive shift (0–250 ms), and fade-end controls
 - Smooth real-time playheads and visual start, shift, and fade editing on every waveform
 - Hover-highlighted Start and Fade markers
 - Non-crossing Start/Fade markers, draggable range selection, and mouse-wheel fade editing

@@ -364,12 +364,61 @@ void DicerLookAndFeel::setTheme(const DicerTheme& newTheme)
 
 juce::String DisplaySlider::getTextFromValue(double value)
 {
-    return juce::String(value * displayScale, displayScale == 1.0 ? 1 : 0) + getTextValueSuffix();
+    const auto displayed = value * displayScale;
+    auto decimals = displayScale == 1.0 ? 1 : 0;
+    if (adaptiveDecimalDisplay && std::abs(displayed - std::round(displayed)) < 0.00001)
+        decimals = 0;
+    return juce::String(displayed, decimals) + getTextValueSuffix();
 }
 
 double DisplaySlider::getValueFromText(const juce::String& text)
 {
     return text.retainCharacters("-0123456789.").getDoubleValue() / displayScale;
+}
+
+double DisplaySlider::snapValue(double attemptedValue, DragMode dragMode)
+{
+    if (coarseStep <= 0.0 || dragMode == notDragging)
+        return juce::Slider::snapValue(attemptedValue, dragMode);
+    const auto step = fineStepActive ? fineStep : coarseStep;
+    return juce::jlimit(getMinimum(), getMaximum(), std::round(attemptedValue / step) * step);
+}
+
+void DisplaySlider::mouseDown(const juce::MouseEvent& event)
+{
+    fineStepActive = event.mods.isShiftDown();
+    juce::Slider::mouseDown(event);
+}
+
+void DisplaySlider::mouseDrag(const juce::MouseEvent& event)
+{
+    fineStepActive = event.mods.isShiftDown();
+    juce::Slider::mouseDrag(event);
+}
+
+void DisplaySlider::mouseUp(const juce::MouseEvent& event)
+{
+    juce::Slider::mouseUp(event);
+    fineStepActive = false;
+}
+
+void DisplaySlider::mouseWheelMove(const juce::MouseEvent& event,
+                                   const juce::MouseWheelDetails& wheel)
+{
+    if (coarseStep <= 0.0)
+    {
+        juce::Slider::mouseWheelMove(event, wheel);
+        return;
+    }
+    const auto delta = wheel.deltaY != 0.0f ? wheel.deltaY : wheel.deltaX;
+    if (delta == 0.0f) return;
+    const auto step = event.mods.isShiftDown() ? fineStep : coarseStep;
+    const auto attempted = getValue() + (delta > 0.0f ? step : -step);
+    startedDragging();
+    setValue(juce::jlimit(getMinimum(), getMaximum(),
+                          std::round(attempted / step) * step),
+             juce::sendNotificationSync);
+    stoppedDragging();
 }
 
 DiceButton::DiceButton() : juce::Button("DICE"), theme(availableThemes().front()) {}
@@ -553,6 +602,9 @@ SlotView::SlotView(SampleDicerAudioProcessor& p, int index)
                     "slot" + juce::String(slot + 1) + ".start"))
                 parameter->setValueNotifyingHost(parameter->convertTo0to1(fade));
     };
+    knobs[1].setShiftFineSteps(1.0, 0.1);
+    knobs[1].setAdaptiveDecimalDisplay(true);
+    knobs[1].setTooltip("Whole semitones by default; hold Shift for 0.1 semitone precision");
     previous.onClick = [this] { processor.browse(slot, -1); refresh(); };
     next.onClick = [this] { processor.browse(slot, 1); refresh(); };
     slotDice.onClick = [this]
