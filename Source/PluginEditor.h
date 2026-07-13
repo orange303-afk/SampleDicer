@@ -85,6 +85,7 @@ private:
     void timerCallback() override;
     SampleDicerAudioProcessor& processor;
     DicerLookAndFeel lookAndFeel;
+    juce::Component content;
     std::array<std::unique_ptr<SlotView>, 4> slots;
     DiceButton dice;
     juce::TextButton back { "<< BACK" }, samples { "SAMPLES" }, params { "PARAMS" };

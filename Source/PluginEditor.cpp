@@ -5,6 +5,10 @@ namespace
 constexpr auto accent = 0xffffb000;
 constexpr auto panel = 0xff242831;
 constexpr auto waveform = 0xfff1b935;
+constexpr int designWidth = 820;
+constexpr int designHeight = 875;
+constexpr float minimumScale = 0.65f;
+constexpr float maximumScale = 2.0f;
 
 class AboutPanel : public juce::Component
 {
@@ -445,10 +449,13 @@ SampleDicerAudioProcessorEditor::SampleDicerAudioProcessorEditor(SampleDicerAudi
     : AudioProcessorEditor(&p), processor(p)
 {
     setLookAndFeel(&lookAndFeel);
+    content.setBounds(0, 0, designWidth, designHeight);
+    content.setInterceptsMouseClicks(false, true);
+    addAndMakeVisible(content);
     for (size_t i = 0; i < slots.size(); ++i)
     {
         slots[i] = std::make_unique<SlotView>(processor, static_cast<int>(i));
-        addAndMakeVisible(*slots[i]);
+        content.addAndMakeVisible(*slots[i]);
     }
     const std::array<juce::String, 4> names { "VOLUME", "PITCH", "START", "SHIFT" };
     const std::array<juce::String, 4> ids { "volume", "pitch", "start", "shift" };
@@ -460,7 +467,7 @@ SampleDicerAudioProcessorEditor::SampleDicerAudioProcessorEditor(SampleDicerAudi
         random[i].setTextBoxStyle(juce::Slider::TextBoxRight, false, 62, 18);
         random[i].setDisplayScale(100.0);
         random[i].setTextValueSuffix(" %");
-        addAndMakeVisible(randomLabels[i]); addAndMakeVisible(random[i]);
+        content.addAndMakeVisible(randomLabels[i]); content.addAndMakeVisible(random[i]);
         randomLinks[i] = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
             processor.state, "random." + ids[i], random[i]);
     }
@@ -468,61 +475,68 @@ SampleDicerAudioProcessorEditor::SampleDicerAudioProcessorEditor(SampleDicerAudi
     randomTitle.setFont(juce::FontOptions(12.0f, juce::Font::bold));
     randomTitle.setColour(juce::Label::textColourId, juce::Colour(0xff858c98));
     randomTitle.setJustificationType(juce::Justification::centredLeft);
-    addAndMakeVisible(randomTitle);
-    addAndMakeVisible(dice);
-    addAndMakeVisible(back);
-    addAndMakeVisible(samples);
-    addAndMakeVisible(params);
+    content.addAndMakeVisible(randomTitle);
+    content.addAndMakeVisible(dice);
+    content.addAndMakeVisible(back);
+    content.addAndMakeVisible(samples);
+    content.addAndMakeVisible(params);
     about.setColour(juce::HyperlinkButton::textColourId, juce::Colour(0xff9299a5));
     about.onClick = [this]
     {
         juce::CallOutBox::launchAsynchronously(std::make_unique<AboutPanel>(),
                                                about.getScreenBounds(), nullptr);
     };
-    addAndMakeVisible(about);
+    content.addAndMakeVisible(about);
     voicesLabel.setText("VOICES", juce::dontSendNotification);
     voicesLabel.setFont(juce::FontOptions(10.5f, juce::Font::bold));
     voicesLabel.setColour(juce::Label::textColourId, juce::Colour(0xff9299a5));
     voicesLabel.setJustificationType(juce::Justification::centredRight);
-    addAndMakeVisible(voicesLabel);
+    content.addAndMakeVisible(voicesLabel);
     for (int i = 1; i <= 16; ++i) voices.addItem(juce::String(i), i);
-    addAndMakeVisible(voices);
+    content.addAndMakeVisible(voices);
     voicesLink = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(
         processor.state, "global.voices", voices);
     burst.setColour(juce::ToggleButton::textColourId, juce::Colour(0xffdfe3ea));
     burst.setColour(juce::ToggleButton::tickColourId, juce::Colour(accent));
     burst.setColour(juce::ToggleButton::tickDisabledColourId, juce::Colour(0xff4a505c));
-    addAndMakeVisible(burst);
+    content.addAndMakeVisible(burst);
     burstLink = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
         processor.state, "global.burst", burst);
     pte.setColour(juce::ToggleButton::textColourId, juce::Colour(0xffdfe3ea));
     pte.setColour(juce::ToggleButton::tickColourId, juce::Colour(accent));
     pte.setTooltip("Randomize parameters on every MIDI note-on; samples stay unchanged");
-    addAndMakeVisible(pte);
+    content.addAndMakeVisible(pte);
     pteLink = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
         processor.state, "global.pte", pte);
     key.setColour(juce::ToggleButton::textColourId, juce::Colour(0xffdfe3ea));
     key.setColour(juce::ToggleButton::tickColourId, juce::Colour(accent));
     key.setTooltip("Chromatic keytracking relative to MIDI note 60 (middle C)");
-    addAndMakeVisible(key);
+    content.addAndMakeVisible(key);
     keyLink = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
         processor.state, "global.key", key);
     burstRateLabel.setText("RATE", juce::dontSendNotification);
     burstRateLabel.setFont(juce::FontOptions(9.5f, juce::Font::bold));
     burstRateLabel.setColour(juce::Label::textColourId, juce::Colour(0xff9299a5));
     burstRateLabel.setJustificationType(juce::Justification::centred);
-    addAndMakeVisible(burstRateLabel);
+    content.addAndMakeVisible(burstRateLabel);
     burstRate.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     burstRate.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 58, 16);
     burstRate.setTextValueSuffix(" Hz");
-    addAndMakeVisible(burstRate);
+    content.addAndMakeVisible(burstRate);
     burstRateLink = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
         processor.state, "global.burstRate", burstRate);
     dice.onClick = [this] { dice.roll(); processor.dice(); };
     back.onClick = [this] { processor.back(); };
     samples.onClick = [this] { processor.dice(true, false); };
     params.onClick = [this] { processor.dice(false, true); };
-    setSize(820, 875);
+    setResizable(true, true);
+    setResizeLimits(juce::roundToInt(designWidth * minimumScale),
+                    juce::roundToInt(designHeight * minimumScale),
+                    juce::roundToInt(designWidth * maximumScale),
+                    juce::roundToInt(designHeight * maximumScale));
+    if (auto* constrainer = getConstrainer())
+        constrainer->setFixedAspectRatio(static_cast<double>(designWidth) / designHeight);
+    setSize(designWidth, designHeight);
     startTimerHz(60);
 }
 
@@ -531,6 +545,8 @@ SampleDicerAudioProcessorEditor::~SampleDicerAudioProcessorEditor() { setLookAnd
 void SampleDicerAudioProcessorEditor::paint(juce::Graphics& g)
 {
     g.fillAll(juce::Colour(0xff14171c));
+    juce::Graphics::ScopedSaveState state(g);
+    g.addTransform(content.getTransform());
     g.setColour(juce::Colour(accent));
     g.setFont(juce::FontOptions(25.0f, juce::Font::bold));
     g.drawText("SAMPLE DICER", 20, 10, 300, 36, juce::Justification::centredLeft);
@@ -538,8 +554,17 @@ void SampleDicerAudioProcessorEditor::paint(juce::Graphics& g)
 
 void SampleDicerAudioProcessorEditor::resized()
 {
-    about.setBounds(getWidth() - 76, 12, 55, 24);
-    auto area = getLocalBounds().reduced(20);
+    const auto scale = juce::jmin(static_cast<float>(getWidth()) / designWidth,
+                                  static_cast<float>(getHeight()) / designHeight);
+    const auto scaledWidth = designWidth * scale;
+    const auto scaledHeight = designHeight * scale;
+    const auto offsetX = (static_cast<float>(getWidth()) - scaledWidth) * 0.5f;
+    const auto offsetY = (static_cast<float>(getHeight()) - scaledHeight) * 0.5f;
+
+    content.setTransform(juce::AffineTransform::scale(scale).translated(offsetX, offsetY));
+
+    about.setBounds(designWidth - 76, 12, 55, 24);
+    auto area = content.getLocalBounds().reduced(20);
     area.removeFromTop(42);
     for (auto& view : slots)
     {
