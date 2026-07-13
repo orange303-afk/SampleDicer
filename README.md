@@ -10,8 +10,7 @@ Four-layer one-shot sampler for AU, VST3 and standalone use. One MIDI note norma
 - Four drag-and-drop sample slots with waveform display and previous/next folder navigation
 - Smooth proportional interface resizing from 60% to 200%, plus persistent scale presets
 - Twenty persistent colour schemes with dark, light and colourful variations
-- Optional Glitch Mode
-  waveform artefacts, randomized delays, stutters, crackles and sample-hold glitches
+- Optional Glitch Mode for unpredictable audio and visual variations
 - Refined arc-style controls with parameter units
 - Per-slot volume, whole-semitone pitch with Shift fine mode (0.1 st), draggable start point,
   positive shift (0–250 ms), and fade-end controls
@@ -35,6 +34,16 @@ Four-layer one-shot sampler for AU, VST3 and standalone use. One MIDI note norma
 - DAW state restoration for parameters and sample paths
 - Last-used sample folder is remembered globally; DICE can populate empty slots from it
 - Once-daily background check for newer GitHub releases with an in-plug-in notification
+
+## Use Cases
+
+- **Game development** — create non-repetitive gunshots, explosions, impacts, magical effects, creature sounds, and foley
+- **Film, video, and podcasts** — quickly build evolving background effects such as footsteps, crowds, battles, machinery, and environmental textures
+- **Music production** — generate glitch textures, IDM variations, layered percussion, fills, transitions, and constantly changing one-shots
+- **Sound design** — combine and randomize multiple layers to discover new impacts, weapons, interfaces, and cinematic effects
+- **Live performance** — trigger controlled variations, bursts, and round-robin patterns without preparing every variation in advance
+- **Rapid prototyping** — turn a folder of raw samples into playable, varied audio while testing a game, scene, or musical idea
+- **Sample-library creation** — produce batches of related variations from the same source material while keeping pitch, timing, level, and fades within defined limits
 
 ## Build (macOS)
 
