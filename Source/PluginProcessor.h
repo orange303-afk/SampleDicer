@@ -19,6 +19,7 @@ public:
   void clearSample(int slot);
   juce::File sampleFile(int) const;
   float playheadPosition(int) const;
+  uint32_t glitchVisualGeneration() const noexcept { return glitchTriggerGeneration.load(std::memory_order_acquire); }
   void dice(bool files=true,bool values=true); bool diceSlot(int slot); juce::AudioProcessorValueTreeState state;
   void back();
   bool canGoBack() const noexcept { return hasPreviousGeneration; }
@@ -29,14 +30,27 @@ private:
   struct RtParameters { std::atomic<float>* gain{}; std::atomic<float>* pitch{}; std::atomic<float>* start{}; std::atomic<float>* shift{}; std::atomic<float>* fade{}; std::atomic<float>* startFadeLength{}; std::atomic<float>* fadeLength{}; std::atomic<float>* startFadeCurve{}; std::atomic<float>* fadeCurve{}; std::atomic<float>* locked{}; };
   static juce::AudioProcessorValueTreeState::ParameterLayout layout();
   juce::String id(int,const juce::String&) const; void triggerAll(float velocity,int midiNote); void renderVoices(juce::AudioBuffer<float>&);
+  void startGlitchEvent() noexcept;
+  void processGlitch(juce::AudioBuffer<float>&) noexcept;
   void captureGeneration();
   float audioRandom01() noexcept;
   std::array<Slot,4> slots; juce::AudioFormatManager formats;
   std::array<RtParameters,4> rtParameters;
-  std::atomic<float>* rtVoices{}; std::atomic<float>* rtPte{}; std::atomic<float>* rtKey{}; std::atomic<float>* rtBurst{}; std::atomic<float>* rtBurstRate{};
+  std::atomic<float>* rtVoices{}; std::atomic<float>* rtPte{}; std::atomic<float>* rtKey{}; std::atomic<float>* rtRoundRobin{}; std::atomic<float>* rtBurst{}; std::atomic<float>* rtBurstRate{}; std::atomic<float>* rtGlitchMode{};
   std::atomic<float>* rtMasterGain{};
   std::atomic<float>* rtRandomVolume{}; std::atomic<float>* rtRandomPitch{}; std::atomic<float>* rtRandomStart{}; std::atomic<float>* rtRandomShift{};
-  juce::Random uiRandom; uint32_t audioRngState=0x9e3779b9u; double hostRate=44100; double burstCountdown=0; int heldNotes=0; int lastTriggeredNote=60; juce::CriticalSection lock;
+  juce::Random uiRandom; uint32_t audioRngState=0x9e3779b9u; double hostRate=44100; double burstCountdown=0; int heldNotes=0; int lastTriggeredNote=60; int lastRoundRobinSlot=-1; juce::CriticalSection lock;
+  static constexpr int glitchDelayCapacity = 65536;
+  static constexpr int glitchStutterCapacity = 8192;
+  std::array<std::array<float, glitchDelayCapacity>, 2> glitchDelayBuffer {};
+  std::array<std::array<float, glitchStutterCapacity>, 2> glitchStutterBuffer {};
+  std::array<float, 2> glitchHeldSample {};
+  int glitchWritePosition=0, glitchDelaySamples=1, glitchSamplesRemaining=0;
+  int glitchStutterLength=1, glitchStutterPosition=0, glitchStutterRepeats=0;
+  int glitchHoldLength=1, glitchHoldCounter=0;
+  bool glitchCapturing=false;
+  float glitchWet=0.35f, glitchFeedback=0.25f, glitchCrackleChance=0.001f;
+  std::atomic<uint32_t> glitchTriggerGeneration { 0 };
   Generation previousGeneration; bool hasPreviousGeneration=false;
   std::unique_ptr<juce::PropertiesFile> settings;
   JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SampleDicerAudioProcessor)

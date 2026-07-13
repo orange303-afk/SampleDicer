@@ -39,10 +39,20 @@ class DisplaySlider : public juce::Slider
 {
 public:
     void setDisplayScale(double newScale) { displayScale = newScale; }
+    void setShiftFineSteps(double coarse, double fine) { coarseStep = coarse; fineStep = fine; }
+    void setAdaptiveDecimalDisplay(bool enabled) { adaptiveDecimalDisplay = enabled; }
     juce::String getTextFromValue(double value) override;
     double getValueFromText(const juce::String& text) override;
+    double snapValue(double attemptedValue, DragMode dragMode) override;
+    void mouseDown(const juce::MouseEvent&) override;
+    void mouseDrag(const juce::MouseEvent&) override;
+    void mouseUp(const juce::MouseEvent&) override;
+    void mouseWheelMove(const juce::MouseEvent&, const juce::MouseWheelDetails&) override;
 private:
     double displayScale = 1.0;
+    double coarseStep = 0.0, fineStep = 0.0;
+    bool fineStepActive = false;
+    bool adaptiveDecimalDisplay = false;
 };
 
 class DiceButton : public juce::Button
@@ -94,6 +104,7 @@ public:
     void filesDropped(const juce::StringArray&, int, int) override;
     void refresh();
     void setTheme(const DicerTheme&);
+    void setGlitchVisuals(bool enabled, uint32_t seed);
     void mouseDown(const juce::MouseEvent&) override;
     void mouseDrag(const juce::MouseEvent&) override;
     void mouseUp(const juce::MouseEvent&) override;
@@ -124,12 +135,17 @@ private:
     juce::AudioThumbnailCache thumbnailCache { 8 };
     juce::AudioThumbnail thumbnail { 512, thumbnailFormats, thumbnailCache };
     juce::File displayedFile;
+    juce::String displayedSampleName;
+    uint32_t displayedGlitchSeed = 0;
+    bool displayedWithGlitch = false;
     juce::Rectangle<int> waveformArea;
     DragTarget dragTarget = DragTarget::none;
     DragTarget hoverTarget = DragTarget::none;
     float rangeDragMouseFraction = 0.0f;
     float rangeDragStart = 0.0f;
     float rangeDragFade = 1.0f;
+    bool glitchVisuals = false;
+    uint32_t glitchSeed = 0;
     DicerTheme theme;
 };
 
@@ -151,6 +167,10 @@ private:
     void showOptions();
     void applyScalePreset(int index, bool save = true);
     void applyTheme(int index, bool save = true);
+    void setGlitchVisualsEnabled(bool enabled);
+    void triggerGlitchVisuals(uint32_t generation);
+    void applyGlitchThemeFrame();
+    void setInterfaceTextGlitch(bool enabled, uint32_t seed);
     void updateComponentColours();
     SampleDicerAudioProcessor& processor;
     DicerLookAndFeel lookAndFeel;
@@ -169,19 +189,29 @@ private:
     juce::ToggleButton burst { "BURST" };
     juce::ToggleButton pte { "PTE" };
     juce::ToggleButton key { "KEY" };
+    juce::ToggleButton roundRobin { "RR" };
     DisplaySlider burstRate;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> voicesLink;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> burstLink;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> pteLink;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> keyLink;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> roundRobinLink;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> burstRateLink;
     std::array<DisplaySlider, 4> random;
     std::array<juce::Label, 4> randomLabels;
     std::array<std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>, 4> randomLinks;
     juce::File updateResponseFile;
     std::unique_ptr<juce::URL::DownloadTask> updateDownload;
+    DicerTheme normalTheme;
     DicerTheme currentTheme;
     int scalePresetIndex = 1;
     int themeIndex = 0;
+    juce::Random visualRandom;
+    juce::String glitchTitleText { "SAMPLE DICER" };
+    uint32_t lastGlitchGeneration = 0;
+    uint32_t glitchVisualSeed = 0;
+    int glitchFlashFrames = 0;
+    bool glitchVisualActive = false;
+    bool glitchModeWasEnabled = false;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SampleDicerAudioProcessorEditor)
 };
