@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="background" x1="120" y1="80" x2="900" y2="940" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#252a2e"/>
+      <stop offset="0.55" stop-color="#101316"/>
+      <stop offset="1" stop-color="#0a0c0e"/>
+    </linearGradient>
+    <linearGradient id="face" x1="260" y1="220" x2="760" y2="805" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#26333b"/>
+      <stop offset="1" stop-color="#172228"/>
+    </linearGradient>
+    <filter id="faceGlow" x="-35%" y="-35%" width="170%" height="170%">
+      <feGaussianBlur stdDeviation="34"/>
+    </filter>
+    <filter id="pipGlow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="13"/>
+    </filter>
+  </defs>
+
+  <rect x="48" y="48" width="928" height="928" rx="205" fill="url(#background)"/>
+  <rect x="65" y="65" width="894" height="894" rx="190" fill="none" stroke="#343c42" stroke-width="8"/>
+
+  <g transform="rotate(-5 512 512)">
+    <rect x="192" y="192" width="640" height="640" rx="148" fill="#28c7e8" opacity="0.2" filter="url(#faceGlow)"/>
+    <rect x="192" y="192" width="640" height="640" rx="148" fill="url(#face)" stroke="#62d9ef" stroke-width="20"/>
+    <rect x="217" y="217" width="590" height="590" rx="125" fill="none" stroke="#f2f6f7" stroke-opacity="0.08" stroke-width="6"/>
+
+    <g fill="#28c7e8" opacity="0.38" filter="url(#pipGlow)">
+      <circle cx="365" cy="340" r="57"/><circle cx="659" cy="340" r="57"/>
+      <circle cx="365" cy="512" r="57"/><circle cx="659" cy="512" r="57"/>
+      <circle cx="365" cy="684" r="57"/><circle cx="659" cy="684" r="57"/>
+    </g>
+    <g fill="#62d9ef">
+      <circle cx="365" cy="340" r="48"/><circle cx="659" cy="340" r="48"/>
+      <circle cx="365" cy="512" r="48"/><circle cx="659" cy="512" r="48"/>
+      <circle cx="365" cy="684" r="48"/><circle cx="659" cy="684" r="48"/>
+    </g>
+  </g>
+</svg>

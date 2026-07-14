@@ -672,7 +672,7 @@ SlotView::SlotView(SampleDicerAudioProcessor& p, int index)
     title.setText("SLOT " + juce::String(index + 1), juce::dontSendNotification);
     title.setFont(juce::FontOptions(15.0f, juce::Font::bold));
     addAndMakeVisible(title); addAndMakeVisible(file); addAndMakeVisible(previous); addAndMakeVisible(next);
-    slotDice.setTooltip("Choose a random sample from this slot's folder");
+    slotDice.setTooltip("Choose a random sample from this slot's folder; host parameter: Randomize Slot Sample Trigger");
     addAndMakeVisible(slotDice);
     clearSlot.setTooltip("Remove the sample from this slot");
     addAndMakeVisible(clearSlot);
@@ -719,13 +719,15 @@ SlotView::SlotView(SampleDicerAudioProcessor& p, int index)
     };
     knobs[1].setShiftFineSteps(1.0, 0.1);
     knobs[1].setAdaptiveDecimalDisplay(true);
+    knobs[1].setDoubleClickReturnValue(true, 0.0);
     knobs[1].setTooltip("Whole semitones by default; hold Shift for 0.1 semitone precision");
     previous.onClick = [this] { processor.browse(slot, -1); refresh(); };
     next.onClick = [this] { processor.browse(slot, 1); refresh(); };
     slotDice.onClick = [this]
     {
         slotDice.roll();
-        if (processor.diceSlot(slot)) refresh();
+        processor.requestRandomizeAction(static_cast<SampleDicerAudioProcessor::RandomizeAction>(
+            static_cast<int>(SampleDicerAudioProcessor::RandomizeAction::slot1) + slot));
     };
     clearSlot.onClick = [this]
     {
@@ -1382,10 +1384,13 @@ SampleDicerAudioProcessorEditor::SampleDicerAudioProcessorEditor(SampleDicerAudi
     content.addAndMakeVisible(burstRate);
     burstRateLink = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
         processor.state, "global.burstRate", burstRate);
-    dice.onClick = [this] { dice.roll(); processor.dice(); };
+    dice.setTooltip("Randomize samples and parameters; MIDI-map the DICE Trigger host parameter");
+    samples.setTooltip("Randomize samples; MIDI-map the Randomize Samples Trigger host parameter");
+    params.setTooltip("Randomize parameters; MIDI-map the Randomize Parameters Trigger host parameter");
+    dice.onClick = [this] { dice.roll(); processor.requestRandomizeAction(SampleDicerAudioProcessor::RandomizeAction::dice); };
     back.onClick = [this] { processor.back(); };
-    samples.onClick = [this] { processor.dice(true, false); };
-    params.onClick = [this] { processor.dice(false, true); };
+    samples.onClick = [this] { processor.requestRandomizeAction(SampleDicerAudioProcessor::RandomizeAction::samples); };
+    params.onClick = [this] { processor.requestRandomizeAction(SampleDicerAudioProcessor::RandomizeAction::params); };
     setResizable(true, true);
     setResizeLimits(juce::roundToInt(designWidth * minimumScale),
                     juce::roundToInt(designHeight * minimumScale),

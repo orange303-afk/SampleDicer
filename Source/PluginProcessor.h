@@ -1,11 +1,14 @@
 #pragma once
 #include <JuceHeader.h>
 
-class SampleDicerAudioProcessor : public juce::AudioProcessor {
+class SampleDicerAudioProcessor : public juce::AudioProcessor,
+                                  private juce::AudioProcessorValueTreeState::Listener,
+                                  private juce::AsyncUpdater {
 public:
+  enum class RandomizeAction { dice, samples, params, slot1, slot2, slot3, slot4 };
   SampleDicerAudioProcessor();
   ~SampleDicerAudioProcessor() override;
-  void prepareToPlay(double,int) override; void releaseResources() override {}
+  void prepareToPlay(double,int) override; void releaseResources() override;
   bool isBusesLayoutSupported(const BusesLayout&) const override;
   void processBlock(juce::AudioBuffer<float>&,juce::MidiBuffer&) override;
   juce::AudioProcessorEditor* createEditor() override; bool hasEditor() const override{return true;}
@@ -22,6 +25,7 @@ public:
   bool renderCurrentSoundToFile(const juce::File&, bool useAiff, juce::String& errorMessage);
   uint32_t glitchVisualGeneration() const noexcept { return glitchTriggerGeneration.load(std::memory_order_acquire); }
   void dice(bool files=true,bool values=true); bool diceSlot(int slot); juce::AudioProcessorValueTreeState state;
+  void requestRandomizeAction(RandomizeAction action);
   void back();
   bool canGoBack() const noexcept { return hasPreviousGeneration; }
 private:
@@ -30,7 +34,11 @@ private:
   struct Generation { std::array<juce::File,4> files; std::array<std::array<float,4>,4> values{}; };
   struct RtParameters { std::atomic<float>* gain{}; std::atomic<float>* pitch{}; std::atomic<float>* start{}; std::atomic<float>* shift{}; std::atomic<float>* fade{}; std::atomic<float>* startFadeLength{}; std::atomic<float>* fadeLength{}; std::atomic<float>* startFadeCurve{}; std::atomic<float>* fadeCurve{}; std::atomic<float>* locked{}; };
   static juce::AudioProcessorValueTreeState::ParameterLayout layout();
+  static const char* actionParameterId(int index) noexcept;
   juce::String id(int,const juce::String&) const; void triggerAll(float velocity,int midiNote); void renderVoices(juce::AudioBuffer<float>&);
+  void parameterChanged(const juce::String& parameterId, float newValue) override;
+  void handleAsyncUpdate() override;
+  void stopAllVoices() noexcept;
   void startGlitchEvent() noexcept;
   void processGlitch(juce::AudioBuffer<float>&) noexcept;
   void captureGeneration();
@@ -52,6 +60,8 @@ private:
   bool glitchCapturing=false;
   float glitchWet=0.35f, glitchFeedback=0.25f, glitchCrackleChance=0.001f;
   std::atomic<uint32_t> glitchTriggerGeneration { 0 };
+  std::atomic<uint32_t> pendingRandomizeActions { 0 };
+  bool transportStateKnown=false, lastTransportPlaying=false;
   Generation previousGeneration; bool hasPreviousGeneration=false;
   std::unique_ptr<juce::PropertiesFile> settings;
   JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SampleDicerAudioProcessor)

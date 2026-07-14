@@ -28,12 +28,14 @@ Four-layer one-shot sampler for AU, VST3 and standalone use. One MIDI note norma
 - Per-slot LOCK controls to exclude layers from DICE and PTE
 - Per-slot random-sample and clear controls
 - Separate DICE, SAMPLES and PARAMS actions
+- MIDI-mappable host trigger parameters for DICE, SAMPLES, PARAMS, and per-slot DICE actions
 - BACK recalls the previous generated combination
 - Four global randomisation-depth controls
 - Real-time-safe master volume control
 - DAW state restoration for parameters and sample paths
 - Last-used sample folder is remembered globally; DICE can populate empty slots from it
 - Once-daily background check for newer GitHub releases with an in-plug-in notification
+- Active voices, Burst repeats, delayed triggers, and glitch tails stop when the DAW transport changes
 
 ## Use Cases
 

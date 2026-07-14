@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.2 — 2026-07-15
+
+- MIDI-mappable host trigger parameters for DICE, SAMPLES, PARAMS, and every slot DICE action
+- Immediate voice, Burst, delayed-trigger, and glitch-tail reset on DAW transport changes
+- Pitch knobs now reset exactly to 0 st on double-click
+- New cyan six-pip die icon for the standalone application
+- Separate native Apple Silicon and Intel x86_64 macOS builds
+
 ## 1.5.1 — 2026-07-14
 
 - Standalone-only Quick Export with WAV/AIFF format, destination folder, and filename template settings
