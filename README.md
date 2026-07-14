@@ -62,6 +62,18 @@ The plug-ins are created below `build/SampleDicer_artefacts/Release/`; automatic
 
 Ready-to-use macOS VST3, Audio Unit, standalone, and Windows x64 VST3 builds are available on the [Releases](https://github.com/orange303-afk/SampleDicer/releases) page.
 
+### macOS quarantine
+
+If macOS blocks a plug-in downloaded from this repository because it cannot verify the developer, first install it in the usual location, then remove the quarantine attribute in Terminal. Only do this for files downloaded from the official Sample Dicer release page.
+
+```sh
+sudo xattr -dr com.apple.quarantine "/Library/Audio/Plug-Ins/VST3/Sample Dicer.vst3"
+sudo xattr -dr com.apple.quarantine "/Library/Audio/Plug-Ins/Components/Sample Dicer.component"
+xattr -dr com.apple.quarantine "/Applications/Sample Dicer.app"
+```
+
+Afterwards, restart the DAW and rescan the plug-ins if Sample Dicer does not appear immediately. Adjust the path in the command if you installed the standalone application or plug-in somewhere else.
+
 ## Manual
 
 - English: [Sample_Dicer_Manual_EN_v1.5.0.pdf](https://github.com/user-attachments/files/29986770/Sample_Dicer_Manual_EN_v1.5.0.pdf)
