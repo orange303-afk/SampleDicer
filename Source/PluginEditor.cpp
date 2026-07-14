@@ -162,6 +162,7 @@ class AboutPanel : public juce::Component
 public:
     explicit AboutPanel(const DicerTheme& selectedTheme)
         : theme(selectedTheme),
+          productWebsite("sampledicer.pro", juce::URL("https://sampledicer.pro/")),
           website("ilyaorange.tilda.ws", juce::URL("https://ilyaorange.tilda.ws")),
           bandcamp("ilyaorange.bandcamp.com", juce::URL("https://ilyaorange.bandcamp.com")),
           gumroad("ilyaorange.gumroad.com", juce::URL("https://ilyaorange.gumroad.com")),
@@ -173,7 +174,7 @@ public:
         title.setFont(juce::FontOptions(15.0f, juce::Font::bold));
         title.setColour(juce::Label::textColourId, theme.primaryText);
         addAndMakeVisible(title);
-        for (auto* link : { &website, &bandcamp, &gumroad, &donate })
+        for (auto* link : { &productWebsite, &website, &bandcamp, &gumroad, &donate })
         {
             link->setColour(juce::HyperlinkButton::textColourId, theme.accent);
             addAndMakeVisible(link);
@@ -186,9 +187,8 @@ public:
         crypto.setColour(juce::TextEditor::textColourId, theme.secondaryText);
         crypto.setFont(juce::FontOptions(12.0f));
         crypto.setJustification(juce::Justification::centredTop);
-        crypto.setText("BTC: 3PZSPAgXpLUtnH2LH9TmxjizVUETHPa9cW\n\n"
-                       "ETH: 0x6144548f3f6071136fdf18134a99345cf12ae6b5\n\n"
-                       "USDT ERC20: 0x0f49f2cddf673214646a3154f60aa0c63a414ad3",
+        crypto.setText("BTC: bc1qyslgnxddg0d0wtdt028sk58zzu3pezlvqu50zs\n\n"
+                       "ETH: 0x0d24ca73E4A61aaA1d54695C740B9e78C73F79e6",
                        false);
         addAndMakeVisible(crypto);
         setSize(520, 285);
@@ -204,7 +204,7 @@ public:
         auto area = getLocalBounds().reduced(14);
         title.setBounds(area.removeFromTop(31));
         area.removeFromTop(3);
-        for (auto* link : { &website, &bandcamp, &gumroad, &donate })
+        for (auto* link : { &productWebsite, &website, &bandcamp, &gumroad, &donate })
             link->setBounds(area.removeFromTop(27));
         area.removeFromTop(5);
         crypto.setBounds(area);
@@ -213,19 +213,20 @@ public:
 private:
     DicerTheme theme;
     juce::Label title;
-    juce::HyperlinkButton website, bandcamp, gumroad, donate;
+    juce::HyperlinkButton productWebsite, website, bandcamp, gumroad, donate;
     juce::TextEditor crypto;
 };
 
 class OptionsPanel : public juce::Component
 {
 public:
-    OptionsPanel(juce::AudioProcessorValueTreeState& state, int initialScale, int initialTheme,
+    OptionsPanel(juce::AudioProcessorValueTreeState& state, int initialScale, int initialTheme, bool showExportOptions,
                  std::function<void(int)> scaleCallback,
                  std::function<void(int)> themeCallback,
                  std::function<void(bool)> glitchCallback)
         : scaleIndex(juce::jlimit(0, static_cast<int>(scalePresets.size()) - 1, initialScale)),
           themeIndex(juce::jlimit(0, static_cast<int>(availableThemes().size()) - 1, initialTheme)),
+          standaloneOptions(showExportOptions),
           onScaleChanged(std::move(scaleCallback)), onThemeChanged(std::move(themeCallback)),
           onGlitchChanged(std::move(glitchCallback))
     {
@@ -258,8 +259,48 @@ public:
         };
         for (auto* component : components)
             addAndMakeVisible(component);
+        if (standaloneOptions)
+        {
+            exportTitle.setText("QUICK EXPORT", juce::dontSendNotification);
+            exportTitle.setFont(juce::FontOptions(10.5f, juce::Font::bold));
+            exportTitle.setJustificationType(juce::Justification::centredLeft);
+            formatTitle.setText("FORMAT", juce::dontSendNotification);
+            templateTitle.setText("NAME", juce::dontSendNotification);
+            for (auto* label : { &formatTitle, &templateTitle })
+            {
+                label->setFont(juce::FontOptions(9.5f, juce::Font::bold));
+                label->setJustificationType(juce::Justification::centredLeft);
+            }
+            folderButton.setButtonText("CHANGE FOLDER...");
+            folderButton.onClick = [this] { chooseExportFolder(); };
+            folderValue.setJustificationType(juce::Justification::centredLeft);
+            folderValue.setFont(juce::FontOptions(10.5f));
+            format.addItem("WAV", 1); format.addItem("AIF", 2);
+            format.setSelectedId(readExportFormat()=="aif"?2:1, juce::dontSendNotification);
+            format.onChange = [this]
+            {
+                juce::PropertiesFile settings(updateSettingsOptions());
+                settings.setValue("exportFormat", format.getSelectedId()==2?"aif":"wav");
+                settings.saveIfNeeded();
+            };
+            nameTemplate.setText(readNameTemplate(), false);
+            nameTemplate.setTextToShowWhenEmpty("<name>_<number>", availableThemes()[static_cast<size_t>(themeIndex)].mutedText);
+            nameTemplate.setTooltip("Tokens: <name> is the first loaded sample name, <number> is the export counter");
+            nameTemplate.onTextChange = [this]
+            {
+                juce::PropertiesFile settings(updateSettingsOptions());
+                settings.setValue("exportNameTemplate", nameTemplate.getText());
+                settings.saveIfNeeded();
+            };
+            const std::array<juce::Component*, 7> exportComponents {
+                &exportTitle, &folderButton, &folderValue, &formatTitle, &format, &templateTitle, &nameTemplate
+            };
+            for (auto* component : exportComponents)
+                addAndMakeVisible(component);
+            refreshFolderLabel();
+        }
         refresh();
-        setSize(350, 218);
+        setSize(standaloneOptions ? 410 : 350, standaloneOptions ? 376 : 218);
     }
 
     void paint(juce::Graphics& g) override
@@ -279,6 +320,21 @@ public:
         layoutRow(area.removeFromTop(42), themeTitle, themeDown, themeValue, themeUp);
         area.removeFromTop(8);
         glitch.setBounds(area.removeFromTop(35).reduced(8, 2));
+        if (standaloneOptions)
+        {
+            area.removeFromTop(12);
+            exportTitle.setBounds(area.removeFromTop(20));
+            auto folderRow = area.removeFromTop(34);
+            folderButton.setBounds(folderRow.removeFromLeft(132).reduced(2));
+            folderValue.setBounds(folderRow.reduced(6, 0));
+            area.removeFromTop(6);
+            auto exportRow = area.removeFromTop(34);
+            formatTitle.setBounds(exportRow.removeFromLeft(52));
+            format.setBounds(exportRow.removeFromLeft(76).reduced(2));
+            exportRow.removeFromLeft(6);
+            templateTitle.setBounds(exportRow.removeFromLeft(46));
+            nameTemplate.setBounds(exportRow.reduced(2));
+        }
     }
 
 private:
@@ -325,7 +381,60 @@ private:
         glitch.setColour(juce::ToggleButton::textColourId, theme.primaryText);
         glitch.setColour(juce::ToggleButton::tickColourId, theme.accent);
         glitch.setColour(juce::ToggleButton::tickDisabledColourId, theme.controlTrack);
+        exportTitle.setColour(juce::Label::textColourId, theme.mutedText);
+        formatTitle.setColour(juce::Label::textColourId, theme.mutedText);
+        templateTitle.setColour(juce::Label::textColourId, theme.mutedText);
+        folderValue.setColour(juce::Label::textColourId, theme.secondaryText);
+        folderButton.setColour(juce::TextButton::buttonColourId, theme.button);
+        folderButton.setColour(juce::TextButton::textColourOffId, theme.primaryText);
+        nameTemplate.setColour(juce::TextEditor::backgroundColourId, theme.button);
+        nameTemplate.setColour(juce::TextEditor::textColourId, theme.primaryText);
+        nameTemplate.setColour(juce::TextEditor::outlineColourId, theme.controlTrack);
         repaint();
+    }
+
+    static juce::String readExportFormat()
+    {
+        juce::PropertiesFile settings(updateSettingsOptions());
+        return settings.getValue("exportFormat", "wav");
+    }
+
+    static juce::String readNameTemplate()
+    {
+        juce::PropertiesFile settings(updateSettingsOptions());
+        return settings.getValue("exportNameTemplate", "<name>_<number>");
+    }
+
+    void refreshFolderLabel()
+    {
+        juce::PropertiesFile settings(updateSettingsOptions());
+        const auto path = settings.getValue("exportDirectory");
+        const auto text = path.isEmpty() ? "Not selected (asked on first export)" : juce::File(path).getFileName();
+        folderValue.setText(text, juce::dontSendNotification);
+        folderValue.setTooltip(path);
+    }
+
+    void chooseExportFolder()
+    {
+        juce::PropertiesFile settings(updateSettingsOptions());
+        auto initial = juce::File(settings.getValue("exportDirectory"));
+        if (!initial.isDirectory()) initial = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory);
+        folderChooser = std::make_unique<juce::FileChooser>("Choose a folder for quick exports", initial, "*", true);
+        folderChooser->launchAsync(juce::FileBrowserComponent::openMode |
+                                   juce::FileBrowserComponent::canSelectDirectories,
+            [safePanel = juce::Component::SafePointer<OptionsPanel>(this)] (const juce::FileChooser& chooser)
+            {
+                if (safePanel == nullptr) return;
+                const auto folder = chooser.getResult();
+                if (folder.isDirectory())
+                {
+                    juce::PropertiesFile exportSettings(updateSettingsOptions());
+                    exportSettings.setValue("exportDirectory", folder.getFullPathName());
+                    exportSettings.saveIfNeeded();
+                    safePanel->refreshFolderLabel();
+                }
+                safePanel->folderChooser.reset();
+            });
     }
 
     int scaleIndex = 1, themeIndex = 0;
@@ -333,6 +442,12 @@ private:
     juce::Label heading, scaleTitle, scaleValue, themeTitle, themeValue;
     juce::TextButton scaleDown, scaleUp, themeDown, themeUp;
     juce::ToggleButton glitch;
+    bool standaloneOptions = false;
+    juce::Label exportTitle, folderValue, formatTitle, templateTitle;
+    juce::TextButton folderButton;
+    juce::ComboBox format;
+    juce::TextEditor nameTemplate;
+    std::unique_ptr<juce::FileChooser> folderChooser;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> glitchLink;
     std::function<void(int)> onScaleChanged, onThemeChanged;
     std::function<void(bool)> onGlitchChanged;
@@ -1208,6 +1323,12 @@ SampleDicerAudioProcessorEditor::SampleDicerAudioProcessorEditor(SampleDicerAudi
                                                about.getScreenBounds(), nullptr);
     };
     content.addAndMakeVisible(about);
+    if (processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone)
+    {
+        quickExportButton.onClick = [this] { quickExport(); };
+        quickExportButton.setTooltip("Render the current four-slot sound to the configured export folder");
+        content.addAndMakeVisible(quickExportButton);
+    }
     masterLabel.setText("MASTER", juce::dontSendNotification);
     masterLabel.setFont(juce::FontOptions(8.5f, juce::Font::bold));
     masterLabel.setJustificationType(juce::Justification::centredRight);
@@ -1280,15 +1401,102 @@ SampleDicerAudioProcessorEditor::SampleDicerAudioProcessorEditor(SampleDicerAudi
 
 SampleDicerAudioProcessorEditor::~SampleDicerAudioProcessorEditor()
 {
+    exportDirectoryChooser.reset();
     updateDownload.reset();
     updateResponseFile.deleteFile();
     setLookAndFeel(nullptr);
+}
+
+void SampleDicerAudioProcessorEditor::quickExport()
+{
+    bool hasSample = false;
+    for (int slot = 0; slot < 4; ++slot) hasSample = hasSample || processor.sampleFile(slot).existsAsFile();
+    if (!hasSample)
+    {
+        juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon, "Quick Export",
+                                               "Load at least one sample before exporting.");
+        return;
+    }
+    juce::PropertiesFile settings(updateSettingsOptions());
+    if (juce::File(settings.getValue("exportDirectory")).isDirectory())
+        exportToConfiguredDirectory();
+    else
+        chooseExportDirectory([safeEditor = juce::Component::SafePointer<SampleDicerAudioProcessorEditor>(this)] (bool chosen)
+        {
+            if (safeEditor != nullptr && chosen) safeEditor->exportToConfiguredDirectory();
+        });
+}
+
+void SampleDicerAudioProcessorEditor::chooseExportDirectory(std::function<void(bool)> completion)
+{
+    juce::PropertiesFile settings(updateSettingsOptions());
+    auto initial = juce::File(settings.getValue("exportDirectory"));
+    if (!initial.isDirectory()) initial = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory);
+    exportDirectoryChooser = std::make_unique<juce::FileChooser>("Choose a folder for quick exports", initial, "*", true);
+    exportDirectoryChooser->launchAsync(juce::FileBrowserComponent::openMode |
+                                        juce::FileBrowserComponent::canSelectDirectories,
+        [safeEditor = juce::Component::SafePointer<SampleDicerAudioProcessorEditor>(this),
+         savedCompletion = std::move(completion)] (const juce::FileChooser& chooser) mutable
+        {
+            if (safeEditor == nullptr) return;
+            const auto folder = chooser.getResult();
+            const auto chosen = folder.isDirectory();
+            if (chosen)
+            {
+                juce::PropertiesFile exportSettings(updateSettingsOptions());
+                exportSettings.setValue("exportDirectory", folder.getFullPathName());
+                exportSettings.saveIfNeeded();
+            }
+            safeEditor->exportDirectoryChooser.reset();
+            savedCompletion(chosen);
+        });
+}
+
+void SampleDicerAudioProcessorEditor::exportToConfiguredDirectory()
+{
+    juce::PropertiesFile settings(updateSettingsOptions());
+    const auto folder = juce::File(settings.getValue("exportDirectory"));
+    if (!folder.isDirectory()) return;
+    auto sourceName = juce::String("SampleDicer");
+    for (int slot = 0; slot < 4; ++slot)
+        if (const auto source = processor.sampleFile(slot); source.existsAsFile())
+        { sourceName = source.getFileNameWithoutExtension(); break; }
+    auto pattern = settings.getValue("exportNameTemplate", "<name>_<number>").trim();
+    if (pattern.isEmpty()) pattern = "<name>_<number>";
+    const auto format = settings.getValue("exportFormat", "wav").toLowerCase();
+    const auto extension = format == "aif" ? ".aif" : ".wav";
+    const auto includesNumber = pattern.containsIgnoreCase("<number>");
+    auto number = juce::jmax(1, settings.getIntValue("exportNextNumber", 1));
+    juce::File destination;
+    for (;; ++number)
+    {
+        auto stem = pattern.replace("<number>", juce::String(number).paddedLeft('0', 3), true)
+                           .replace("<name>", sourceName, true);
+        stem = juce::File::createLegalFileName(stem.trim());
+        if (stem.isEmpty()) stem = "SampleDicer_" + juce::String(number).paddedLeft('0', 3);
+        if (!includesNumber && folder.getChildFile(stem + extension).exists())
+            stem += "_" + juce::String(number).paddedLeft('0', 3);
+        destination = folder.getChildFile(stem + extension);
+        if (!destination.exists()) break;
+    }
+    juce::String error;
+    if (!processor.renderCurrentSoundToFile(destination, format == "aif", error))
+    {
+        juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon, "Quick Export", error);
+        return;
+    }
+    settings.setValue("exportNextNumber", number + 1);
+    settings.saveIfNeeded();
+    quickExportButton.setButtonText("EXPORTED \xe2\x9c\x93");
+    quickExportButton.setTooltip(destination.getFullPathName());
+    exportStatusFrames = 90;
 }
 
 void SampleDicerAudioProcessorEditor::showOptions()
 {
     auto panel = std::make_unique<OptionsPanel>(
         processor.state, scalePresetIndex, themeIndex,
+        processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone,
         [safeEditor = juce::Component::SafePointer<SampleDicerAudioProcessorEditor>(this)] (int index)
         {
             if (safeEditor != nullptr) safeEditor->applyScalePreset(index);
@@ -1406,6 +1614,11 @@ void SampleDicerAudioProcessorEditor::updateComponentColours()
     }
     options.setColour(juce::HyperlinkButton::textColourId, currentTheme.mutedText);
     about.setColour(juce::HyperlinkButton::textColourId, currentTheme.mutedText);
+    if (processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone)
+    {
+        quickExportButton.setColour(juce::TextButton::buttonColourId, currentTheme.button);
+        quickExportButton.setColour(juce::TextButton::textColourOffId, currentTheme.primaryText);
+    }
     content.sendLookAndFeelChange();
     repaint();
 }
@@ -1508,6 +1721,8 @@ void SampleDicerAudioProcessorEditor::resized()
 
     options.setBounds(designWidth - 236, 12, 68, 24);
     about.setBounds(designWidth - 165, 12, 55, 24);
+    if (processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone)
+        quickExportButton.setBounds(designWidth - 350, 10, 108, 28);
     masterLabel.setBounds(designWidth - 108, 12, 52, 24);
     masterVolume.setBounds(designWidth - 54, 3, 42, 42);
     auto area = content.getLocalBounds().reduced(20);
@@ -1556,6 +1771,11 @@ void SampleDicerAudioProcessorEditor::resized()
 
 void SampleDicerAudioProcessorEditor::timerCallback()
 {
+    if (exportStatusFrames > 0 && --exportStatusFrames == 0)
+    {
+        quickExportButton.setButtonText("QUICK EXPORT");
+        quickExportButton.setTooltip("Render the current four-slot sound to the configured export folder");
+    }
     const auto glitchEnabled = processor.state.getRawParameterValue("global.glitchMode")->load() > 0.5f;
     if (glitchEnabled != glitchModeWasEnabled)
         setGlitchVisualsEnabled(glitchEnabled);

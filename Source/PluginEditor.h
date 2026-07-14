@@ -165,6 +165,9 @@ private:
     void beginUpdateCheck();
     void showUpdateAvailable(const juce::String& version, const juce::URL& releaseUrl);
     void showOptions();
+    void quickExport();
+    void chooseExportDirectory(std::function<void(bool)> completion);
+    void exportToConfiguredDirectory();
     void applyScalePreset(int index, bool save = true);
     void applyTheme(int index, bool save = true);
     void setGlitchVisualsEnabled(bool enabled);
@@ -180,6 +183,7 @@ private:
     juce::TextButton back { "<< BACK" }, samples { "SAMPLES" }, params { "PARAMS" };
     juce::HyperlinkButton options { "Options", juce::URL() };
     juce::HyperlinkButton about { "About", juce::URL() };
+    juce::TextButton quickExportButton { "QUICK EXPORT" };
     juce::Label masterLabel;
     DisplaySlider masterVolume;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> masterVolumeLink;
@@ -202,6 +206,7 @@ private:
     std::array<std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>, 4> randomLinks;
     juce::File updateResponseFile;
     std::unique_ptr<juce::URL::DownloadTask> updateDownload;
+    std::unique_ptr<juce::FileChooser> exportDirectoryChooser;
     DicerTheme normalTheme;
     DicerTheme currentTheme;
     int scalePresetIndex = 1;
@@ -211,6 +216,7 @@ private:
     uint32_t lastGlitchGeneration = 0;
     uint32_t glitchVisualSeed = 0;
     int glitchFlashFrames = 0;
+    int exportStatusFrames = 0;
     bool glitchVisualActive = false;
     bool glitchModeWasEnabled = false;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SampleDicerAudioProcessorEditor)

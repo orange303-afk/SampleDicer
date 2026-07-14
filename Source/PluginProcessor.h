@@ -19,6 +19,7 @@ public:
   void clearSample(int slot);
   juce::File sampleFile(int) const;
   float playheadPosition(int) const;
+  bool renderCurrentSoundToFile(const juce::File&, bool useAiff, juce::String& errorMessage);
   uint32_t glitchVisualGeneration() const noexcept { return glitchTriggerGeneration.load(std::memory_order_acquire); }
   void dice(bool files=true,bool values=true); bool diceSlot(int slot); juce::AudioProcessorValueTreeState state;
   void back();

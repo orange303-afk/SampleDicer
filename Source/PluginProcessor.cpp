@@ -40,6 +40,87 @@ bool SampleDicerAudioProcessor::browse(int s,int direction){if(!juce::isPositive
 juce::String SampleDicerAudioProcessor::sampleName(int s)const{return juce::isPositiveAndBelow(s,4)&&slots[s].file.existsAsFile()?slots[s].file.getFileName():"Drop a sample";}
 juce::File SampleDicerAudioProcessor::sampleFile(int s)const{return juce::isPositiveAndBelow(s,4)?slots[s].file:juce::File{};}
 float SampleDicerAudioProcessor::playheadPosition(int s)const{return juce::isPositiveAndBelow(s,4)?slots[(size_t)s].displayPosition.load():-1.f;}
+bool SampleDicerAudioProcessor::renderCurrentSoundToFile(const juce::File& destination, bool useAiff,
+                                                          juce::String& errorMessage)
+{
+  struct RenderSlot
+  {
+    juce::AudioBuffer<float> audio;
+    double sourceRate=44100.0;
+    float gainDb=0.0f,pitch=0.0f,start=0.0f,shift=0.0f,fade=1.0f;
+    float startFadeLengthMs=10.0f,fadeLengthMs=10.0f,startFadeCurve=0.0f,fadeCurve=0.0f;
+  };
+  std::array<RenderSlot,4> renderSlots;
+  {
+    const juce::ScopedLock guard(lock);
+    for(size_t i=0;i<renderSlots.size();++i)
+    {
+      if(!slots[i].sampleReady.load(std::memory_order_acquire)||slots[i].audio.getNumSamples()<2)continue;
+      renderSlots[i].audio=slots[i].audio;
+      renderSlots[i].sourceRate=slots[i].sourceRate;
+    }
+  }
+  bool hasAudio=false;
+  int outputSamples=0;
+  const auto outputRate=hostRate>0.0?hostRate:44100.0;
+  for(size_t i=0;i<renderSlots.size();++i)
+  {
+    auto& s=renderSlots[i];
+    if(s.audio.getNumSamples()<2)continue;
+    hasAudio=true;
+    const auto& rt=rtParameters[i];
+    s.gainDb=rt.gain->load();s.pitch=rt.pitch->load();s.start=rt.start->load();s.shift=rt.shift->load();
+    s.fade=rt.fade->load();s.startFadeLengthMs=rt.startFadeLength->load();s.fadeLengthMs=rt.fadeLength->load();
+    s.startFadeCurve=rt.startFadeCurve->load();s.fadeCurve=rt.fadeCurve->load();
+    s.start=juce::jmin(s.start,s.fade);
+    const auto step=s.sourceRate/outputRate*std::pow(2.0,(double)s.pitch/12.0);
+    const auto sourceLength=juce::jmax(0.0,(double)(s.fade-s.start)*s.audio.getNumSamples());
+    outputSamples=juce::jmax(outputSamples,juce::roundToInt(s.shift*.001*outputRate)+
+                                          (int)std::ceil(sourceLength/juce::jmax(step,0.000001)));
+  }
+  if(!hasAudio||outputSamples<=0){errorMessage="Load at least one sample before exporting.";return false;}
+  juce::AudioBuffer<float> output(2,outputSamples);output.clear();
+  for(const auto& s:renderSlots)
+  {
+    if(s.audio.getNumSamples()<2)continue;
+    const auto step=s.sourceRate/outputRate*std::pow(2.0,(double)s.pitch/12.0);
+    const auto startPosition=(double)s.start*s.audio.getNumSamples();
+    const auto fadeEnd=(double)s.fade*s.audio.getNumSamples();
+    const auto availableFade=juce::jmax(1.0,(double)(s.fade-s.start)*s.audio.getNumSamples());
+    const auto startFadeSamples=juce::jmin(availableFade,juce::jmax(1.0,s.sourceRate*s.startFadeLengthMs*.001));
+    const auto fadeSamples=juce::jmin(availableFade,juce::jmax(1.0,s.sourceRate*s.fadeLengthMs*.001));
+    const auto startCurveExponent=std::pow(4.0,(double)s.startFadeCurve);
+    const auto fadeCurveExponent=std::pow(4.0,(double)s.fadeCurve);
+    const auto gain=juce::Decibels::decibelsToGain(s.gainDb);
+    const auto delay=juce::roundToInt(s.shift*.001*outputRate);
+    auto position=startPosition;
+    for(int i=delay;i<outputSamples&&position<fadeEnd&&position<s.audio.getNumSamples()-1;++i,position+=step)
+    {
+      const auto index=(int)position;const auto fraction=(float)(position-index);
+      const auto fadeInGain=std::pow(juce::jlimit(0.0,1.0,(position-startPosition)/startFadeSamples),startCurveExponent);
+      const auto fadeOutGain=std::pow(juce::jlimit(0.0,1.0,(fadeEnd-position)/fadeSamples),fadeCurveExponent);
+      const auto envelope=(float)(fadeInGain*fadeOutGain)*gain;
+      for(int channel=0;channel<2;++channel)
+      {
+        const auto* source=s.audio.getReadPointer(juce::jmin(channel,s.audio.getNumChannels()-1));
+        output.addSample(channel,i,juce::jmap(fraction,source[index],source[index+1])*envelope);
+      }
+    }
+  }
+  output.applyGain(juce::Decibels::decibelsToGain(rtMasterGain->load()));
+  if(destination.existsAsFile()&&!destination.deleteFile()){errorMessage="The existing export file cannot be replaced.";return false;}
+  std::unique_ptr<juce::OutputStream> stream=destination.createOutputStream();
+  if(stream==nullptr){errorMessage="The export file cannot be created in the selected folder.";return false;}
+  std::unique_ptr<juce::AudioFormat> format=useAiff
+      ?std::unique_ptr<juce::AudioFormat>(new juce::AiffAudioFormat())
+      :std::unique_ptr<juce::AudioFormat>(new juce::WavAudioFormat());
+  const auto options=juce::AudioFormatWriterOptions{}.withSampleRate(outputRate).withNumChannels(2).withBitsPerSample(24);
+  auto writer=format->createWriterFor(stream,options);
+  if(writer==nullptr){errorMessage="The audio writer could not be created.";destination.deleteFile();return false;}
+  if(!writer->writeFromAudioSampleBuffer(output,0,output.getNumSamples()))
+  {errorMessage="Writing the audio file failed.";writer.reset();destination.deleteFile();return false;}
+  return true;
+}
 float SampleDicerAudioProcessor::audioRandom01() noexcept{audioRngState^=audioRngState<<13;audioRngState^=audioRngState>>17;audioRngState^=audioRngState<<5;return(float)(audioRngState&0x00ffffffu)/16777215.f;}
 void SampleDicerAudioProcessor::startGlitchEvent() noexcept
 {

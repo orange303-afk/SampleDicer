@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.1 — 2026-07-14
+
+- Standalone-only Quick Export with WAV/AIFF format, destination folder, and filename template settings
+- Updated BTC and ETH donation addresses in the About window and README
+- Added the official [sampledicer.pro](https://sampledicer.pro/) link to the About window
+
 ## 1.5.0 — 2026-07-13
 
 - Optional Glitch Mode with per-note inverted colour flashes and regenerated Zalgo text
