@@ -81,10 +81,19 @@ Afterwards, restart the DAW and rescan the plug-ins if Sample Dicer does not app
 
 ## License
 
-Sample Dicer is free for noncommercial use under the
-[PolyForm Noncommercial License 1.0.0](LICENSE). Commercial use, commercial
-development, and use in revenue-generating products or services require a
-separate paid license. Contact Ilya Orange via
+Sample Dicer uses the [Sample Dicer Indie License 1.0](LICENSE). Commercial and
+noncommercial use is free for independent musicians, bedroom producers,
+freelancers, indie developers, and small studios when both of these conditions
+are met:
+
+- combined annual company revenue is below USD 1,000,000; and
+- the production and development budget of each project is below USD 250,000.
+
+Eligible music, games, films, sound effects, and other output may be published
+and monetized without royalties or attribution. A separate paid commercial
+license is required when either threshold is reached. Resale, commercial
+redistribution, or bundling of Sample Dicer itself also requires written
+permission. Contact Ilya Orange via
 [Facebook](https://www.facebook.com/orange303/),
 [X](https://x.com/ilyaorangee), or
 [Telegram](https://t.me/orange303).

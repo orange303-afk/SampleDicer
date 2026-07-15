@@ -1,138 +1,111 @@
-# Sample Dicer Licensing
+# Sample Dicer Indie License 1.0
 
 Required Notice: Copyright 2026 Ilya Orange. All rights reserved.
 
-Sample Dicer is available at no charge for noncommercial purposes under the
-PolyForm Noncommercial License 1.0.0 below.
+This license is intended to keep Sample Dicer free for independent musicians,
+bedroom producers, freelancers, indie developers, and small studios, including
+when their work is commercial, while requiring a paid license from larger
+businesses and high-budget projects.
 
-Commercial use is not granted by this public license. To use Sample Dicer, its
-source code, or a modified version in commercial work, commercial development,
-or a revenue-generating product or service, contact Ilya Orange to purchase a
-separate commercial license:
+## 1. Definitions
+
+**Software** means Sample Dicer in source-code or binary form, including any
+modified version.
+
+**Output** means audio, music, sound effects, recordings, or other media created
+by using the Software. Output does not include the Software itself or a modified
+version of the Software.
+
+**Project** means a game, recording, album, film, application, service, media
+production, or other product or production in which the Software or its Output
+is used.
+
+**Your Company** means you and every legal entity, sole proprietorship, or other
+organization for which you use the Software, together with all entities under
+common control. Control includes the power to direct management or policies by
+ownership, vote, contract, or otherwise.
+
+**Total Revenue** means the combined gross revenue of Your Company during its
+most recently completed fiscal year.
+
+**Project Budget** means the total production and development budget of a
+Project, excluding only marketing and distribution expenses.
+
+## 2. Free Indie License
+
+You may use the Software free of charge for commercial and noncommercial
+purposes only while both of the following conditions are true:
+
+1. Your Company's Total Revenue is less than 1,000,000 USD; and
+2. the Project Budget of each Project in which the Software or its Output is
+   used is less than 250,000 USD.
+
+An individual using the Software independently and not for a company is treated
+as having zero Total Revenue for this test, but any revenue and budget of the
+Project still count where applicable.
+
+Subject to these conditions, you may:
+
+- install and use the Software;
+- use it in paid or unpaid music, games, films, videos, podcasts, live
+  performances, freelance work, and other Projects;
+- create, publish, sell, license, and monetize Output without royalties or
+  attribution; and
+- inspect, modify, and build the source code for your own use.
+
+Ownership of your Output remains with you. Ilya Orange claims no ownership of,
+and charges no royalties on, eligible Output.
+
+## 3. Commercial License Required
+
+You must obtain a separate paid commercial license before using the Software or
+its Output in a Project if either:
+
+- Your Company's Total Revenue is 1,000,000 USD or more; or
+- that Project's Project Budget is 250,000 USD or more.
+
+Contact Ilya Orange to purchase or negotiate a commercial license:
 
 - Facebook: https://www.facebook.com/orange303/
 - X: https://x.com/ilyaorangee
 - Telegram: https://t.me/orange303
 
-The commercial-license notice above does not modify the PolyForm terms below;
-it explains how to request rights not granted by those terms.
+## 4. Redistribution and Resale
 
-If you enjoy Sample Dicer and would like to support its development with a
-donation, you can do so here:
+You may distribute Output under the Free Indie License. You may also share
+source-code modifications without charge if you include this license and the
+Required Notice with them.
+
+The Free Indie License does not permit you to sell, sublicense, relicense, or
+commercially redistribute the Software itself; bundle the Software as a feature
+of another software product; offer the Software as a hosted service; or present
+the Software or a modified version as your own product. Those uses require a
+separate written license.
+
+## 5. No Trademark License
+
+This license does not grant rights to the Sample Dicer or Ilya Orange names,
+logos, or trademarks, except as needed to provide the Required Notice.
+
+## 6. Compliance and Termination
+
+The rights granted by this license end automatically if you do not comply with
+its terms. The first time you receive written notice of a violation, your rights
+will be reinstated if you fully correct the violation within 30 days. Continued
+or repeated violations require written permission from Ilya Orange.
+
+## 7. No Warranty and Limitation of Liability
+
+To the fullest extent permitted by law, the Software is provided "as is",
+without warranties or conditions of any kind. Ilya Orange will not be liable
+for any damages, losses, or claims arising from the Software or its use.
+
+## 8. Other Rights
+
+This license does not limit any rights you may have under applicable copyright
+exceptions. No rights are granted except those stated in this license. Ilya
+Orange may offer separate licenses on different terms.
+
+If you would like to support development, donations are welcome at:
 
 https://www.paypal.com/paypalme/ilyaorange303
-
----
-
-# PolyForm Noncommercial License 1.0.0
-
-https://polyformproject.org/licenses/noncommercial/1.0.0
-
-## Acceptance
-
-In order to get any license under these terms, you must agree to them as both
-strict obligations and conditions to all your licenses.
-
-## Copyright License
-
-The licensor grants you a copyright license for the software to do everything
-you might do with the software that would otherwise infringe the licensor's
-copyright in it for any permitted purpose. However, you may only distribute the
-software according to Distribution License and make changes or new works based
-on the software according to Changes and New Works License.
-
-## Distribution License
-
-The licensor grants you an additional copyright license to distribute copies of
-the software. Your license to distribute covers distributing the software with
-changes and new works permitted by Changes and New Works License.
-
-## Notices
-
-You must ensure that anyone who gets a copy of any part of the software from you
-also gets a copy of these terms or the URL for them above, as well as copies of
-any plain-text lines beginning with `Required Notice:` that the licensor
-provided with the software. For example:
-
-> Required Notice: Copyright Yoyodyne, Inc. (http://example.com)
-
-## Changes and New Works License
-
-The licensor grants you an additional copyright license to make changes and new
-works based on the software for any permitted purpose.
-
-## Patent License
-
-The licensor grants you a patent license for the software that covers patent
-claims the licensor can license, or becomes able to license, that you would
-infringe by using the software.
-
-## Noncommercial Purposes
-
-Any noncommercial purpose is a permitted purpose.
-
-## Personal Uses
-
-Personal use for research, experiment, and testing for the benefit of public
-knowledge, personal study, private entertainment, hobby projects, amateur
-pursuits, or religious observance, without any anticipated commercial
-application, is use for a permitted purpose.
-
-## Noncommercial Organizations
-
-Use by any charitable organization, educational institution, public research
-organization, public safety or health organization, environmental protection
-organization, or government institution is use for a permitted purpose
-regardless of the source of funding or obligations resulting from the funding.
-
-## Fair Use
-
-You may have "fair use" rights for the software under the law. These terms do
-not limit them.
-
-## No Other Rights
-
-These terms do not allow you to sublicense or transfer any of your licenses to
-anyone else, or prevent the licensor from granting licenses to anyone else.
-These terms do not imply any other licenses.
-
-## Patent Defense
-
-If you make any written claim that the software infringes or contributes to
-infringement of any patent, your patent license for the software granted under
-these terms ends immediately. If your company makes such a claim, your patent
-license ends immediately for work on behalf of your company.
-
-## Violations
-
-The first time you are notified in writing that you have violated any of these
-terms, or done anything with the software not covered by your licenses, your
-licenses can nonetheless continue if you come into full compliance with these
-terms, and take practical steps to correct past violations, within 32 days of
-receiving notice. Otherwise, all your licenses end immediately.
-
-## No Liability
-
-As far as the law allows, the software comes as is, without any warranty or
-condition, and the licensor will not be liable to you for any damages arising
-out of these terms or the use or nature of the software, under any kind of legal
-claim.
-
-## Definitions
-
-The **licensor** is the individual or entity offering these terms, and the
-**software** is the software the licensor makes available under these terms.
-
-**You** refers to the individual or entity agreeing to these terms.
-
-**Your company** is any legal entity, sole proprietorship, or other kind of
-organization that you work for, plus all organizations that have control over,
-are under the control of, or are under common control with that organization.
-**Control** means ownership of substantially all the assets of an entity, or the
-power to direct its management and policies by vote, contract, or otherwise.
-Control can be direct or indirect.
-
-**Your licenses** are all the licenses granted to you for the software under
-these terms.
-
-**Use** means anything you do with the software requiring one of your licenses.
