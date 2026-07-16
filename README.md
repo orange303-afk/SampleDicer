@@ -4,6 +4,11 @@ Four-layer one-shot sampler for AU, VST3 and standalone use. One MIDI note norma
 
 <img width="1224" height="1310" alt="image" src="https://github.com/user-attachments/assets/2f367d59-bc23-4f26-b22c-51aff6c1439f" />
 
+## Promo Video
+
+[![Watch the Sample Dicer promo video on YouTube](https://img.youtube.com/vi/uZD5dqRXegw/maxresdefault.jpg)](https://youtu.be/uZD5dqRXegw)
+
+[Watch the Sample Dicer promo video on YouTube](https://youtu.be/uZD5dqRXegw)
 
 ## Features
 
