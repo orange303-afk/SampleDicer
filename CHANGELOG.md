@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.5.3 — 2026-07-27
+
+- Per-slot Mute and Solo controls for faster layer balancing
+- DICE and PTE now randomize Fade End along with volume, pitch, start and shift
+- New Random FADE depth control in the RANDOM AMOUNT section
+- Uniform sample randomization without immediate file repeats
+- Each slot remembers its own sample folder for DICE and empty-slot loading
+- Expanded Mute and Solo labels plus a compact action-button layout
+- Master ADSR controls for the final output amplitude envelope
+- End markers now remain hard playback limits during long Master Release and PTE variation
+- Release VST3 builds install automatically to `/Library/Audio/Plug-Ins/VST3/`
+
 ## 1.5.2 — 2026-07-15
 
 - MIDI-mappable host trigger parameters for DICE, SAMPLES, PARAMS, and every slot DICE action

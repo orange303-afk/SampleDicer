@@ -61,7 +61,7 @@ cmake -S . -B build -G Xcode
 cmake --build build --config Release
 ```
 
-The plug-ins are created below `build/SampleDicer_artefacts/Release/`; automatic copying into system plug-in folders is disabled.
+The plug-ins are created below `build/SampleDicer_artefacts/Release/`. Release builds of the VST3 target are also copied automatically to `/Library/Audio/Plug-Ins/VST3/` on macOS.
 
 ## Downloads
 

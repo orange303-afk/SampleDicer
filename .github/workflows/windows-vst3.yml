@@ -9,9 +9,6 @@ on:
       - "CMakeLists.txt"
       - ".github/workflows/windows-vst3.yml"
 
-permissions:
-  contents: write
-
 jobs:
   build-windows-vst3:
     runs-on: windows-2022
@@ -33,15 +30,10 @@ jobs:
         run: |
           Compress-Archive `
             -Path "build/SampleDicer_artefacts/Release/VST3/Sample Dicer.vst3" `
-            -DestinationPath "Sample-Dicer-1.5.2-Windows-x64-VST3.zip"
+            -DestinationPath "Sample-Dicer-1.5.3-Windows-x64-VST3.zip"
 
       - name: Store workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Sample-Dicer-1.5.2-Windows-x64-VST3
-          path: Sample-Dicer-1.5.2-Windows-x64-VST3.zip
-
-      - name: Attach to v1.5.2 release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release upload v1.5.2 Sample-Dicer-1.5.2-Windows-x64-VST3.zip --clobber
+          name: Sample-Dicer-1.5.3-Windows-x64-VST3
+          path: Sample-Dicer-1.5.3-Windows-x64-VST3.zip

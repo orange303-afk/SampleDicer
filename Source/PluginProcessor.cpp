@@ -1,7 +1,35 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
-SampleDicerAudioProcessor::SampleDicerAudioProcessor():AudioProcessor(BusesProperties().withOutput("Output",juce::AudioChannelSet::stereo(),true)),state(*this,nullptr,"STATE",layout()){formats.registerBasicFormats();for(int s=0;s<4;++s){auto&rt=rtParameters[(size_t)s];rt.gain=state.getRawParameterValue(id(s,"gain"));rt.pitch=state.getRawParameterValue(id(s,"pitch"));rt.start=state.getRawParameterValue(id(s,"start"));rt.shift=state.getRawParameterValue(id(s,"shift"));rt.fade=state.getRawParameterValue(id(s,"fade"));rt.startFadeLength=state.getRawParameterValue(id(s,"startFadeLength"));rt.fadeLength=state.getRawParameterValue(id(s,"fadeLength"));rt.startFadeCurve=state.getRawParameterValue(id(s,"startFadeCurve"));rt.fadeCurve=state.getRawParameterValue(id(s,"fadeCurve"));rt.locked=state.getRawParameterValue(id(s,"lock"));}rtVoices=state.getRawParameterValue("global.voices");rtPte=state.getRawParameterValue("global.pte");rtKey=state.getRawParameterValue("global.key");rtRoundRobin=state.getRawParameterValue("global.roundRobin");rtBurst=state.getRawParameterValue("global.burst");rtBurstRate=state.getRawParameterValue("global.burstRate");rtGlitchMode=state.getRawParameterValue("global.glitchMode");rtMasterGain=state.getRawParameterValue("global.masterGain");rtRandomVolume=state.getRawParameterValue("random.volume");rtRandomPitch=state.getRawParameterValue("random.pitch");rtRandomStart=state.getRawParameterValue("random.start");rtRandomShift=state.getRawParameterValue("random.shift");for(int action=0;action<7;++action)state.addParameterListener(actionParameterId(action),this);juce::PropertiesFile::Options options;options.applicationName="Sample Dicer";options.filenameSuffix="settings";options.folderName="Ilya Orange/Sample Dicer";options.osxLibrarySubFolder="Application Support";settings=std::make_unique<juce::PropertiesFile>(options);}
+SampleDicerAudioProcessor::SampleDicerAudioProcessor()
+    : AudioProcessor(BusesProperties().withOutput("Output",juce::AudioChannelSet::stereo(),true)),
+      state(*this,nullptr,"STATE",layout())
+{
+  formats.registerBasicFormats();
+  for(int s=0;s<4;++s)
+  {
+    auto&rt=rtParameters[(size_t)s];
+    rt.gain=state.getRawParameterValue(id(s,"gain"));rt.pitch=state.getRawParameterValue(id(s,"pitch"));
+    rt.start=state.getRawParameterValue(id(s,"start"));rt.shift=state.getRawParameterValue(id(s,"shift"));
+    rt.fade=state.getRawParameterValue(id(s,"fade"));rt.startFadeLength=state.getRawParameterValue(id(s,"startFadeLength"));
+    rt.fadeLength=state.getRawParameterValue(id(s,"fadeLength"));rt.startFadeCurve=state.getRawParameterValue(id(s,"startFadeCurve"));
+    rt.fadeCurve=state.getRawParameterValue(id(s,"fadeCurve"));rt.locked=state.getRawParameterValue(id(s,"lock"));
+    rt.mute=state.getRawParameterValue(id(s,"mute"));rt.solo=state.getRawParameterValue(id(s,"solo"));
+  }
+  rtVoices=state.getRawParameterValue("global.voices");rtPte=state.getRawParameterValue("global.pte");
+  rtKey=state.getRawParameterValue("global.key");rtRoundRobin=state.getRawParameterValue("global.roundRobin");
+  rtBurst=state.getRawParameterValue("global.burst");rtBurstRate=state.getRawParameterValue("global.burstRate");
+  rtGlitchMode=state.getRawParameterValue("global.glitchMode");rtMasterGain=state.getRawParameterValue("global.masterGain");
+  rtMasterAttack=state.getRawParameterValue("global.masterAttack");rtMasterDecay=state.getRawParameterValue("global.masterDecay");
+  rtMasterSustain=state.getRawParameterValue("global.masterSustain");rtMasterRelease=state.getRawParameterValue("global.masterRelease");
+  rtRandomVolume=state.getRawParameterValue("random.volume");rtRandomPitch=state.getRawParameterValue("random.pitch");
+  rtRandomStart=state.getRawParameterValue("random.start");rtRandomShift=state.getRawParameterValue("random.shift");
+  rtRandomFade=state.getRawParameterValue("random.fade");
+  for(int action=0;action<7;++action)state.addParameterListener(actionParameterId(action),this);
+  juce::PropertiesFile::Options options;options.applicationName="Sample Dicer";options.filenameSuffix="settings";
+  options.folderName="Ilya Orange/Sample Dicer";options.osxLibrarySubFolder="Application Support";
+  settings=std::make_unique<juce::PropertiesFile>(options);
+}
 SampleDicerAudioProcessor::~SampleDicerAudioProcessor(){cancelPendingUpdate();for(int action=0;action<7;++action)state.removeParameterListener(actionParameterId(action),this);if(settings!=nullptr)settings->saveIfNeeded();}
 juce::AudioProcessorValueTreeState::ParameterLayout SampleDicerAudioProcessor::layout(){
   std::vector<std::unique_ptr<juce::RangedAudioParameter>> p;
@@ -15,8 +43,10 @@ juce::AudioProcessorValueTreeState::ParameterLayout SampleDicerAudioProcessor::l
     p.push_back(std::make_unique<juce::AudioParameterFloat>(x+"fadeLength","Fade Length",1.f,250.f,10.f));
     p.push_back(std::make_unique<juce::AudioParameterFloat>(x+"startFadeCurve","Start Fade Curve",-1.f,1.f,0.f));
     p.push_back(std::make_unique<juce::AudioParameterFloat>(x+"fadeCurve","Fade Curve",-1.f,1.f,0.f));
-    p.push_back(std::make_unique<juce::AudioParameterBool>(x+"lock","Lock Slot",false));}
-  for(auto n:{"volume","pitch","start","shift"})p.push_back(std::make_unique<juce::AudioParameterFloat>("random."+juce::String(n),"Random "+juce::String(n),0.f,1.f,.15f));
+    p.push_back(std::make_unique<juce::AudioParameterBool>(x+"lock","Lock Slot",false));
+    p.push_back(std::make_unique<juce::AudioParameterBool>(x+"mute","Mute Slot",false));
+    p.push_back(std::make_unique<juce::AudioParameterBool>(x+"solo","Solo Slot",false));}
+  for(auto n:{"volume","pitch","start","shift","fade"})p.push_back(std::make_unique<juce::AudioParameterFloat>("random."+juce::String(n),"Random "+juce::String(n),0.f,1.f,.15f));
   p.push_back(std::make_unique<juce::AudioParameterInt>("global.voices","Maximum Voices",1,16,8));
   p.push_back(std::make_unique<juce::AudioParameterBool>("global.burst","Burst",false));
   p.push_back(std::make_unique<juce::AudioParameterFloat>("global.burstRate","Burst Rate",juce::NormalisableRange<float>(1.f,30.f,.1f,0.45f),8.f));
@@ -25,20 +55,25 @@ juce::AudioProcessorValueTreeState::ParameterLayout SampleDicerAudioProcessor::l
   p.push_back(std::make_unique<juce::AudioParameterBool>("global.roundRobin","Random Round Robin",false));
   p.push_back(std::make_unique<juce::AudioParameterBool>("global.glitchMode","Glitch Mode",false));
   p.push_back(std::make_unique<juce::AudioParameterFloat>("global.masterGain","Master Volume",-60.f,6.f,0.f));
+  const juce::NormalisableRange<float> envelopeTimeRange(0.f,10000.f,1.f,0.35f);
+  p.push_back(std::make_unique<juce::AudioParameterFloat>("global.masterAttack","Master Attack",envelopeTimeRange,0.f));
+  p.push_back(std::make_unique<juce::AudioParameterFloat>("global.masterDecay","Master Decay",envelopeTimeRange,0.f));
+  p.push_back(std::make_unique<juce::AudioParameterFloat>("global.masterSustain","Master Sustain",0.f,1.f,1.f));
+  p.push_back(std::make_unique<juce::AudioParameterFloat>("global.masterRelease","Master Release",envelopeTimeRange,10000.f));
   p.push_back(std::make_unique<juce::AudioParameterBool>("action.dice","DICE Trigger",false));
   p.push_back(std::make_unique<juce::AudioParameterBool>("action.samples","Randomize Samples Trigger",false));
   p.push_back(std::make_unique<juce::AudioParameterBool>("action.params","Randomize Parameters Trigger",false));
   for(int slot=1;slot<=4;++slot)p.push_back(std::make_unique<juce::AudioParameterBool>("action.slot"+juce::String(slot),"Randomize Slot "+juce::String(slot)+" Sample Trigger",false));
   return{p.begin(),p.end()};}
 const char* SampleDicerAudioProcessor::actionParameterId(int index) noexcept{static constexpr const char* ids[]{"action.dice","action.samples","action.params","action.slot1","action.slot2","action.slot3","action.slot4"};return juce::isPositiveAndBelow(index,7)?ids[index]:ids[0];}
-void SampleDicerAudioProcessor::prepareToPlay(double r,int){hostRate=r;transportStateKnown=false;stopAllVoices();}
+void SampleDicerAudioProcessor::prepareToPlay(double r,int){hostRate=r;masterEnvelope.setSampleRate(r);updateMasterEnvelopeParameters();transportStateKnown=false;stopAllVoices();}
 void SampleDicerAudioProcessor::releaseResources(){stopAllVoices();transportStateKnown=false;}
 bool SampleDicerAudioProcessor::isBusesLayoutSupported(const BusesLayout& l)const{return l.getMainOutputChannelSet()==juce::AudioChannelSet::mono()||l.getMainOutputChannelSet()==juce::AudioChannelSet::stereo();}
 juce::String SampleDicerAudioProcessor::id(int s,const juce::String& n)const{return"slot"+juce::String(s+1)+"."+n;}
 bool SampleDicerAudioProcessor::loadSample(int s,const juce::File& f){
   if(!juce::isPositiveAndBelow(s,4)||!f.existsAsFile())return false; std::unique_ptr<juce::AudioFormatReader> r(formats.createReaderFor(f)); if(!r)return false;
   juce::AudioBuffer<float> next(juce::jmin(2,(int)r->numChannels),(int)r->lengthInSamples); r->read(&next,0,next.getNumSamples(),0,true,true);
-  slots[(size_t)s].sampleReady.store(false,std::memory_order_release);const juce::ScopedLock guard(lock);slots[(size_t)s].audio=std::move(next);slots[(size_t)s].sourceRate=r->sampleRate;slots[(size_t)s].file=f;slots[(size_t)s].sampleGeneration.fetch_add(1,std::memory_order_release);slots[(size_t)s].displayVoice=-1;slots[(size_t)s].displayPosition.store(-1.f);slots[(size_t)s].sampleReady.store(true,std::memory_order_release);state.state.setProperty("file"+juce::String(s+1),f.getFullPathName(),nullptr);state.state.setProperty("lastFolder",f.getParentDirectory().getFullPathName(),nullptr);if(settings!=nullptr){settings->setValue("lastFolder",f.getParentDirectory().getFullPathName());settings->saveIfNeeded();}return true;}
+  slots[(size_t)s].sampleReady.store(false,std::memory_order_release);const juce::ScopedLock guard(lock);slots[(size_t)s].audio=std::move(next);slots[(size_t)s].sourceRate=r->sampleRate;slots[(size_t)s].file=f;slots[(size_t)s].sampleGeneration.fetch_add(1,std::memory_order_release);slots[(size_t)s].displayVoice=-1;slots[(size_t)s].displayPosition.store(-1.f);slots[(size_t)s].sampleReady.store(true,std::memory_order_release);state.state.setProperty("file"+juce::String(s+1),f.getFullPathName(),nullptr);state.state.setProperty("slotFolder"+juce::String(s+1),f.getParentDirectory().getFullPathName(),nullptr);state.state.setProperty("lastFolder",f.getParentDirectory().getFullPathName(),nullptr);if(settings!=nullptr){settings->setValue("lastFolder",f.getParentDirectory().getFullPathName());settings->saveIfNeeded();}return true;}
 void SampleDicerAudioProcessor::clearSample(int s){if(!juce::isPositiveAndBelow(s,4))return;auto&slot=slots[(size_t)s];slot.sampleReady.store(false,std::memory_order_release);const juce::ScopedLock guard(lock);slot.audio.setSize(0,0);slot.file=juce::File{};slot.sampleGeneration.fetch_add(1,std::memory_order_release);slot.displayVoice=-1;slot.displayPosition.store(-1.f);state.state.setProperty("file"+juce::String(s+1),juce::String{},nullptr);}
 bool SampleDicerAudioProcessor::browse(int s,int direction){if(!juce::isPositiveAndBelow(s,4)||!slots[s].file.existsAsFile())return false;juce::Array<juce::File> fs;
   for(auto e:juce::RangedDirectoryIterator(slots[s].file.getParentDirectory(),false,"*.wav;*.aif;*.aiff;*.flac;*.mp3",juce::File::findFiles))fs.add(e.getFile());
@@ -61,6 +96,7 @@ bool SampleDicerAudioProcessor::renderCurrentSoundToFile(const juce::File& desti
     const juce::ScopedLock guard(lock);
     for(size_t i=0;i<renderSlots.size();++i)
     {
+      if(!isSlotAudible((int)i))continue;
       if(!slots[i].sampleReady.load(std::memory_order_acquire)||slots[i].audio.getNumSamples()<2)continue;
       renderSlots[i].audio=slots[i].audio;
       renderSlots[i].sourceRate=slots[i].sourceRate;
@@ -71,6 +107,7 @@ bool SampleDicerAudioProcessor::renderCurrentSoundToFile(const juce::File& desti
   const auto outputRate=hostRate>0.0?hostRate:44100.0;
   for(size_t i=0;i<renderSlots.size();++i)
   {
+    if(!isSlotAudible((int)i))continue;
     auto& s=renderSlots[i];
     if(s.audio.getNumSamples()<2)continue;
     hasAudio=true;
@@ -128,6 +165,34 @@ bool SampleDicerAudioProcessor::renderCurrentSoundToFile(const juce::File& desti
   return true;
 }
 float SampleDicerAudioProcessor::audioRandom01() noexcept{audioRngState^=audioRngState<<13;audioRngState^=audioRngState>>17;audioRngState^=audioRngState<<5;return(float)(audioRngState&0x00ffffffu)/16777215.f;}
+juce::Array<juce::File> SampleDicerAudioProcessor::collectSampleCandidates(const juce::File& folder,const juce::File& exclude)const{
+  juce::Array<juce::File> candidates;
+  if(!folder.isDirectory())return candidates;
+  for(auto e:juce::RangedDirectoryIterator(folder,false,"*.wav;*.aif;*.aiff;*.flac;*.mp3",juce::File::findFiles))candidates.add(e.getFile());
+  if(exclude.existsAsFile()&&candidates.size()>1)candidates.removeFirstMatchingValue(exclude);
+  return candidates;}
+juce::File SampleDicerAudioProcessor::sampleFolderForSlot(int s)const{
+  if(juce::isPositiveAndBelow(s,4)){if(slots[(size_t)s].file.existsAsFile())return slots[(size_t)s].file.getParentDirectory();const auto slotFolder=state.state.getProperty("slotFolder"+juce::String(s+1)).toString();if(slotFolder.isNotEmpty())return juce::File(slotFolder);}
+  auto path=settings!=nullptr?settings->getValue("lastFolder"):juce::String{};
+  if(path.isEmpty())path=state.state.getProperty("lastFolder").toString();
+  return juce::File(path);}
+bool SampleDicerAudioProcessor::loadRandomSampleFromFolder(int s,const juce::File& folder,const juce::File& exclude){
+  const auto candidates=collectSampleCandidates(folder,exclude);
+  if(candidates.isEmpty())return false;
+  return loadSample(s,candidates[uiRandom.nextInt(candidates.size())]);}
+bool SampleDicerAudioProcessor::anySlotSolo()const{
+  for(int s=0;s<4;++s)if(rtParameters[(size_t)s].solo->load()>.5f&&slots[(size_t)s].sampleReady.load(std::memory_order_acquire))return true;
+  return false;}
+bool SampleDicerAudioProcessor::isSlotAudible(int s)const{
+  if(!juce::isPositiveAndBelow(s,4))return false;
+  if(rtParameters[(size_t)s].mute->load()>.5f)return false;
+  if(anySlotSolo()&&rtParameters[(size_t)s].solo->load()<=.5f)return false;
+  return true;}
+void SampleDicerAudioProcessor::clampStartFade(int s){
+  if(!juce::isPositiveAndBelow(s,4))return;
+  const auto start=state.getRawParameterValue(id(s,"start"))->load();
+  const auto fade=state.getRawParameterValue(id(s,"fade"))->load();
+  if(start>fade)if(auto* parameter=state.getParameter(id(s,"fade")))parameter->setValueNotifyingHost(parameter->convertTo0to1(start));}
 void SampleDicerAudioProcessor::startGlitchEvent() noexcept
 {
   glitchDelaySamples=juce::jlimit(1,glitchDelayCapacity-1,juce::roundToInt(hostRate*(0.012+audioRandom01()*0.17)));
@@ -154,19 +219,135 @@ void SampleDicerAudioProcessor::processGlitch(juce::AudioBuffer<float>& out) noe
     glitchWritePosition=(glitchWritePosition+1)%glitchDelayCapacity;
   }
 }
+void SampleDicerAudioProcessor::updateMasterEnvelopeParameters() noexcept
+{
+  juce::ADSR::Parameters parameters;
+  parameters.attack=rtMasterAttack->load()*.001f;
+  parameters.decay=rtMasterDecay->load()*.001f;
+  parameters.sustain=rtMasterSustain->load();
+  parameters.release=rtMasterRelease->load()*.001f;
+  masterEnvelope.setParameters(parameters);
+}
 void SampleDicerAudioProcessor::triggerAll(float velocity, int midiNote)
 {
-  const auto maximum=juce::roundToInt(rtVoices->load());const auto pteEnabled=rtPte->load()>.5f;const auto keyEnabled=rtKey->load()>.5f;const auto roundRobinEnabled=rtRoundRobin->load()>.5f;
-  auto selectedSlot=-1;if(roundRobinEnabled){std::array<int,4> ready{};auto readyCount=0;for(size_t i=0;i<slots.size();++i)if(slots[i].sampleReady.load(std::memory_order_acquire))ready[(size_t)readyCount++]=(int)i;if(readyCount>1){auto filteredCount=0;for(int i=0;i<readyCount;++i)if(ready[(size_t)i]!=lastRoundRobinSlot)ready[(size_t)filteredCount++]=ready[(size_t)i];if(filteredCount>0)readyCount=filteredCount;}if(readyCount>0){const auto choice=juce::jmin(readyCount-1,(int)(audioRandom01()*(float)readyCount));selectedSlot=ready[(size_t)choice];lastRoundRobinSlot=selectedSlot;}}else lastRoundRobinSlot=-1;
-  for(size_t slotIndex=0;slotIndex<slots.size();++slotIndex){if(roundRobinEnabled&&(int)slotIndex!=selectedSlot)continue;auto&s=slots[slotIndex];if(!s.sampleReady.load(std::memory_order_acquire))continue;auto chosen=-1;for(int i=0;i<maximum;++i)if(!s.voices[(size_t)i].playing){chosen=i;break;}if(chosen<0){chosen=s.nextVoice%maximum;s.nextVoice=(s.nextVoice+1)%maximum;}auto&v=s.voices[(size_t)chosen];const auto&rt=rtParameters[slotIndex];v.gainDb=rt.gain->load();v.pitch=rt.pitch->load();v.start=rt.start->load();v.shift=rt.shift->load();v.fade=rt.fade->load();v.startFadeLengthMs=rt.startFadeLength->load();v.fadeLengthMs=rt.fadeLength->load();v.startFadeCurve=rt.startFadeCurve->load();v.fadeCurve=rt.fadeCurve->load();if(pteEnabled&&rt.locked->load()<=.5f){auto vary=[this](float value,float minimum,float upper,float amount){auto normalized=(value-minimum)/(upper-minimum);normalized=juce::jlimit(0.f,1.f,normalized+(audioRandom01()*2.f-1.f)*amount);return minimum+normalized*(upper-minimum);};v.gainDb=vary(v.gainDb,-60.f,6.f,rtRandomVolume->load());v.pitch=vary(v.pitch,-24.f,24.f,rtRandomPitch->load());v.start=vary(v.start,0.f,.99f,rtRandomStart->load());v.shift=vary(v.shift,0.f,250.f,rtRandomShift->load());}v.start=juce::jmin(v.start,v.fade);if(keyEnabled)v.pitch+=(float)(midiNote-60);v.position=-1;v.delay=0;v.velocity=velocity;v.generation=s.sampleGeneration.load(std::memory_order_acquire);v.playing=true;s.displayVoice=chosen;s.displayPosition.store(v.start);}
+  const auto maximum=juce::roundToInt(rtVoices->load());
+  const auto pteEnabled=rtPte->load()>.5f;
+  const auto keyEnabled=rtKey->load()>.5f;
+  const auto roundRobinEnabled=rtRoundRobin->load()>.5f;
+  auto selectedSlot=-1;
+  if(roundRobinEnabled)
+  {
+    std::array<int,4> ready{};
+    auto readyCount=0;
+    for(size_t i=0;i<slots.size();++i)
+      if(slots[i].sampleReady.load(std::memory_order_acquire)&&isSlotAudible((int)i))
+        ready[(size_t)readyCount++]=(int)i;
+    if(readyCount>1)
+    {
+      auto filteredCount=0;
+      for(int i=0;i<readyCount;++i)
+        if(ready[(size_t)i]!=lastRoundRobinSlot)ready[(size_t)filteredCount++]=ready[(size_t)i];
+      if(filteredCount>0)readyCount=filteredCount;
+    }
+    if(readyCount>0)
+    {
+      const auto choice=juce::jmin(readyCount-1,(int)(audioRandom01()*(float)readyCount));
+      selectedSlot=ready[(size_t)choice];
+      lastRoundRobinSlot=selectedSlot;
+    }
+  }
+  else lastRoundRobinSlot=-1;
+
+  for(size_t slotIndex=0;slotIndex<slots.size();++slotIndex)
+  {
+    if(!isSlotAudible((int)slotIndex))continue;
+    if(roundRobinEnabled&&(int)slotIndex!=selectedSlot)continue;
+    auto&s=slots[slotIndex];
+    if(!s.sampleReady.load(std::memory_order_acquire))continue;
+    auto chosen=-1;
+    for(int i=0;i<maximum;++i)if(!s.voices[(size_t)i].playing){chosen=i;break;}
+    if(chosen<0){chosen=s.nextVoice%maximum;s.nextVoice=(s.nextVoice+1)%maximum;}
+    auto&v=s.voices[(size_t)chosen];
+    const auto&rt=rtParameters[slotIndex];
+    v.gainDb=rt.gain->load();v.pitch=rt.pitch->load();v.start=rt.start->load();v.shift=rt.shift->load();
+    v.fade=rt.fade->load();v.startFadeLengthMs=rt.startFadeLength->load();v.fadeLengthMs=rt.fadeLength->load();
+    v.startFadeCurve=rt.startFadeCurve->load();v.fadeCurve=rt.fadeCurve->load();
+    if(pteEnabled&&rt.locked->load()<=.5f)
+    {
+      auto vary=[this](float value,float minimum,float upper,float amount)
+      {
+        auto normalized=(value-minimum)/(upper-minimum);
+        normalized=juce::jlimit(0.f,1.f,normalized+(audioRandom01()*2.f-1.f)*amount);
+        return minimum+normalized*(upper-minimum);
+      };
+      v.gainDb=vary(v.gainDb,-60.f,6.f,rtRandomVolume->load());
+      v.pitch=vary(v.pitch,-24.f,24.f,rtRandomPitch->load());
+      v.start=vary(v.start,0.f,.99f,rtRandomStart->load());
+      v.shift=vary(v.shift,0.f,250.f,rtRandomShift->load());
+      const auto fadeReduction=audioRandom01()*rtRandomFade->load()*(v.fade-.01f);
+      v.fade=juce::jlimit(.01f,v.fade,v.fade-fadeReduction);
+    }
+    v.start=juce::jmin(v.start,v.fade);
+    if(keyEnabled)v.pitch+=(float)(midiNote-60);
+    v.position=-1;v.delay=0;v.velocity=velocity;
+    v.generation=s.sampleGeneration.load(std::memory_order_acquire);v.playing=true;
+    s.displayVoice=chosen;s.displayPosition.store(v.start);
+  }
 }
 void SampleDicerAudioProcessor::renderVoices(juce::AudioBuffer<float>&out)
 {
-  for(int k=0;k<4;++k){auto&s=slots[(size_t)k];const auto generation=s.sampleGeneration.load(std::memory_order_acquire);for(size_t voiceIndex=0;voiceIndex<s.voices.size();++voiceIndex){auto&v=s.voices[voiceIndex];if(!v.playing)continue;if(v.generation!=generation){v.playing=false;continue;}auto step=s.sourceRate/hostRate*std::pow(2.,v.pitch/12.);auto gain=juce::Decibels::decibelsToGain(v.gainDb);auto startPosition=v.start*s.audio.getNumSamples();auto fadeEnd=v.fade*s.audio.getNumSamples();auto availableFade=juce::jmax(1.0,(double)(v.fade-v.start)*s.audio.getNumSamples());auto startFadeSamples=juce::jmin(availableFade,juce::jmax(1.0,s.sourceRate*v.startFadeLengthMs*.001));auto fadeSamples=juce::jmin(availableFade,juce::jmax(1.0,s.sourceRate*v.fadeLengthMs*.001));auto startCurveExponent=std::pow(4.0,(double)v.startFadeCurve);auto fadeCurveExponent=std::pow(4.0,(double)v.fadeCurve);if(v.position<0){v.position=startPosition;v.delay=juce::roundToInt(v.shift*.001*hostRate);}for(int i=0;i<out.getNumSamples();++i){if(v.delay>0){--v.delay;continue;}auto pos=(int)v.position;if(pos>=s.audio.getNumSamples()-1||v.position>=fadeEnd){v.playing=false;if((int)voiceIndex==s.displayVoice)s.displayPosition.store(-1.f);break;}auto frac=(float)(v.position-pos);auto fadeInGain=std::pow(juce::jlimit(0.0,1.0,(v.position-startPosition)/startFadeSamples),startCurveExponent);auto fadeOutGain=std::pow(juce::jlimit(0.0,1.0,(fadeEnd-v.position)/fadeSamples),fadeCurveExponent);auto envelopeGain=(float)(fadeInGain*fadeOutGain);for(int c=0;c<out.getNumChannels();++c){auto*d=s.audio.getReadPointer(juce::jmin(c,s.audio.getNumChannels()-1));out.addSample(c,i,juce::jmap(frac,d[pos],d[pos+1])*gain*v.velocity*envelopeGain);}v.position+=step;}if((int)voiceIndex==s.displayVoice&&v.playing)s.displayPosition.store((float)(v.position/s.audio.getNumSamples()));}}
+  for(int k=0;k<4;++k)
+  {
+    if(!isSlotAudible(k))continue;
+    auto&s=slots[(size_t)k];
+    const auto generation=s.sampleGeneration.load(std::memory_order_acquire);
+    for(size_t voiceIndex=0;voiceIndex<s.voices.size();++voiceIndex)
+    {
+      auto&v=s.voices[voiceIndex];
+      if(!v.playing)continue;
+      if(v.generation!=generation){v.playing=false;continue;}
+      const auto sampleCount=s.audio.getNumSamples();
+      const auto hardEnd=juce::jmin(v.fade,rtParameters[(size_t)k].fade->load());
+      const auto step=s.sourceRate/hostRate*std::pow(2.,v.pitch/12.);
+      const auto gain=juce::Decibels::decibelsToGain(v.gainDb);
+      const auto startPosition=v.start*sampleCount;
+      const auto fadeEnd=hardEnd*sampleCount;
+      const auto availableFade=juce::jmax(1.0,(double)(hardEnd-v.start)*sampleCount);
+      const auto startFadeSamples=juce::jmin(availableFade,juce::jmax(1.0,s.sourceRate*v.startFadeLengthMs*.001));
+      const auto fadeSamples=juce::jmin(availableFade,juce::jmax(1.0,s.sourceRate*v.fadeLengthMs*.001));
+      const auto startCurveExponent=std::pow(4.0,(double)v.startFadeCurve);
+      const auto fadeCurveExponent=std::pow(4.0,(double)v.fadeCurve);
+      if(v.position<0){v.position=startPosition;v.delay=juce::roundToInt(v.shift*.001*hostRate);}
+      for(int i=0;i<out.getNumSamples();++i)
+      {
+        if(v.delay>0){--v.delay;continue;}
+        const auto pos=(int)v.position;
+        if(pos>=sampleCount-1||v.position>=fadeEnd)
+        {
+          v.playing=false;
+          if((int)voiceIndex==s.displayVoice)s.displayPosition.store(-1.f);
+          break;
+        }
+        const auto frac=(float)(v.position-pos);
+        const auto fadeInGain=std::pow(juce::jlimit(0.0,1.0,(v.position-startPosition)/startFadeSamples),startCurveExponent);
+        const auto fadeOutGain=std::pow(juce::jlimit(0.0,1.0,(fadeEnd-v.position)/fadeSamples),fadeCurveExponent);
+        const auto envelopeGain=(float)(fadeInGain*fadeOutGain);
+        for(int c=0;c<out.getNumChannels();++c)
+        {
+          auto*d=s.audio.getReadPointer(juce::jmin(c,s.audio.getNumChannels()-1));
+          out.addSample(c,i,juce::jmap(frac,d[pos],d[pos+1])*gain*v.velocity*envelopeGain);
+        }
+        v.position+=step;
+      }
+      if((int)voiceIndex==s.displayVoice&&v.playing)
+        s.displayPosition.store((float)(v.position/sampleCount));
+    }
+  }
 }
 void SampleDicerAudioProcessor::stopAllVoices() noexcept
 {
   heldNotes=0;burstCountdown=0;lastRoundRobinSlot=-1;
+  masterEnvelope.reset();
   for(auto& slot:slots){for(auto& voice:slot.voices){voice.playing=false;voice.position=-1;voice.delay=0;}slot.displayVoice=-1;slot.displayPosition.store(-1.f,std::memory_order_release);}
   glitchSamplesRemaining=0;glitchCapturing=false;glitchStutterRepeats=0;glitchStutterPosition=0;glitchHoldCounter=0;glitchWritePosition=0;glitchHeldSample.fill(0.0f);
   for(auto& channel:glitchDelayBuffer)channel.fill(0.0f);for(auto& channel:glitchStutterBuffer)channel.fill(0.0f);
@@ -190,19 +371,19 @@ void SampleDicerAudioProcessor::handleAsyncUpdate()
   if((actions&4u)!=0)dice(false,true);
   for(int slot=0;slot<4;++slot)if((actions&(1u<<(uint32_t)(slot+3)))!=0)diceSlot(slot);
 }
-void SampleDicerAudioProcessor::processBlock(juce::AudioBuffer<float>& out,juce::MidiBuffer& midi){juce::ScopedNoDenormals n;out.clear();
+void SampleDicerAudioProcessor::processBlock(juce::AudioBuffer<float>& out,juce::MidiBuffer& midi){juce::ScopedNoDenormals n;out.clear();updateMasterEnvelopeParameters();
   if(auto* playHead=getPlayHead())if(auto position=playHead->getPosition()){const auto playing=position->getIsPlaying();if(transportStateKnown&&playing!=lastTransportPlaying)stopAllVoices();lastTransportPlaying=playing;transportStateKnown=true;}
   bool started=false;
-  for(auto m:midi){auto message=m.getMessage();if(message.isNoteOn()){++heldNotes;lastTriggeredNote=message.getNoteNumber();if(rtGlitchMode->load()>.5f)startGlitchEvent();triggerAll(message.getFloatVelocity(),lastTriggeredNote);started=true;}else if(message.isNoteOff())heldNotes=juce::jmax(0,heldNotes-1);else if(message.isAllNotesOff()||message.isAllSoundOff())heldNotes=0;}
+  for(auto m:midi){auto message=m.getMessage();if(message.isNoteOn()){++heldNotes;masterEnvelope.noteOn();lastTriggeredNote=message.getNoteNumber();if(rtGlitchMode->load()>.5f)startGlitchEvent();triggerAll(message.getFloatVelocity(),lastTriggeredNote);started=true;}else if(message.isNoteOff()){heldNotes=juce::jmax(0,heldNotes-1);if(heldNotes==0)masterEnvelope.noteOff();}else if(message.isAllNotesOff()||message.isAllSoundOff()){heldNotes=0;masterEnvelope.noteOff();}}
   const auto burst=rtBurst->load()>.5f;const auto interval=hostRate/rtBurstRate->load();if(!burst||heldNotes==0)burstCountdown=0;else{if(started||burstCountdown<=0)burstCountdown=interval;burstCountdown-=out.getNumSamples();while(burstCountdown<=0){triggerAll(1.f,lastTriggeredNote);burstCountdown+=interval;}}
-  {const juce::ScopedTryLock guard(lock);if(guard.isLocked())renderVoices(out);}if(rtGlitchMode->load()>.5f)processGlitch(out);else{glitchSamplesRemaining=0;glitchCapturing=false;glitchStutterRepeats=0;}out.applyGain(juce::Decibels::decibelsToGain(rtMasterGain->load()));}
-void SampleDicerAudioProcessor::captureGeneration(){for(int s=0;s<4;++s){previousGeneration.files[(size_t)s]=slots[(size_t)s].file;int index=0;for(auto name:{"gain","pitch","start","shift"})previousGeneration.values[(size_t)s][(size_t)index++]=state.getRawParameterValue(id(s,name))->load();}hasPreviousGeneration=true;}
-void SampleDicerAudioProcessor::dice(bool files,bool values){captureGeneration();for(int s=0;s<4;++s){if(state.getRawParameterValue(id(s,"lock"))->load()>.5f)continue;if(files){if(slots[(size_t)s].file.existsAsFile()){for(int n=1+uiRandom.nextInt(12);n>0;--n)browse(s,1);}else{auto path=settings!=nullptr?settings->getValue("lastFolder"):juce::String{};if(path.isEmpty())path=state.state.getProperty("lastFolder").toString();juce::Array<juce::File> candidates;auto folder=juce::File(path);if(folder.isDirectory())for(auto e:juce::RangedDirectoryIterator(folder,false,"*.wav;*.aif;*.aiff;*.flac;*.mp3",juce::File::findFiles))candidates.add(e.getFile());if(!candidates.isEmpty())loadSample(s,candidates[uiRandom.nextInt(candidates.size())]);}}if(values)for(auto name:{"gain","pitch","start","shift"}){auto* p=state.getParameter(id(s,name));auto amount=state.getRawParameterValue("random."+juce::String(juce::String(name)=="gain"?"volume":name))->load();p->setValueNotifyingHost(juce::jlimit(0.f,1.f,p->getValue()+(uiRandom.nextFloat()*2-1)*amount));}}}
+  {const juce::ScopedTryLock guard(lock);if(guard.isLocked())renderVoices(out);}if(rtGlitchMode->load()>.5f)processGlitch(out);else{glitchSamplesRemaining=0;glitchCapturing=false;glitchStutterRepeats=0;}masterEnvelope.applyEnvelopeToBuffer(out,0,out.getNumSamples());out.applyGain(juce::Decibels::decibelsToGain(rtMasterGain->load()));}
+void SampleDicerAudioProcessor::captureGeneration(){for(int s=0;s<4;++s){previousGeneration.files[(size_t)s]=slots[(size_t)s].file;int index=0;for(auto name:{"gain","pitch","start","shift","fade"})previousGeneration.values[(size_t)s][(size_t)index++]=state.getRawParameterValue(id(s,name))->load();}hasPreviousGeneration=true;}
+void SampleDicerAudioProcessor::dice(bool files,bool values){captureGeneration();for(int s=0;s<4;++s){if(state.getRawParameterValue(id(s,"lock"))->load()>.5f)continue;if(files)loadRandomSampleFromFolder(s,sampleFolderForSlot(s),slots[(size_t)s].file);if(values)for(auto name:{"gain","pitch","start","shift","fade"}){auto* p=state.getParameter(id(s,name));auto amount=state.getRawParameterValue("random."+juce::String(juce::String(name)=="gain"?"volume":name))->load();p->setValueNotifyingHost(juce::jlimit(0.f,1.f,p->getValue()+(uiRandom.nextFloat()*2-1)*amount));}clampStartFade(s);}}
 bool SampleDicerAudioProcessor::diceSlot(int s)
 {
-  if(!juce::isPositiveAndBelow(s,4))return false;const auto current=slots[(size_t)s].file;auto folder=current.existsAsFile()?current.getParentDirectory():juce::File(settings!=nullptr?settings->getValue("lastFolder"):state.state.getProperty("lastFolder").toString());if(!folder.isDirectory())return false;juce::Array<juce::File> candidates;for(auto e:juce::RangedDirectoryIterator(folder,false,"*.wav;*.aif;*.aiff;*.flac;*.mp3",juce::File::findFiles))candidates.add(e.getFile());if(candidates.isEmpty())return false;if(candidates.size()>1){const auto currentIndex=candidates.indexOf(current);if(currentIndex>=0)candidates.remove(currentIndex);}captureGeneration();return loadSample(s,candidates[uiRandom.nextInt(candidates.size())]);
+  if(!juce::isPositiveAndBelow(s,4))return false;captureGeneration();return loadRandomSampleFromFolder(s,sampleFolderForSlot(s),slots[(size_t)s].file);
 }
-void SampleDicerAudioProcessor::back(){if(!hasPreviousGeneration)return;auto current=previousGeneration;captureGeneration();for(int s=0;s<4;++s){if(current.files[(size_t)s].existsAsFile())loadSample(s,current.files[(size_t)s]);else clearSample(s);int index=0;for(auto name:{"gain","pitch","start","shift"})if(auto*p=state.getParameter(id(s,name))){p->setValueNotifyingHost(p->convertTo0to1(current.values[(size_t)s][(size_t)index++]));}}}
+void SampleDicerAudioProcessor::back(){if(!hasPreviousGeneration)return;auto current=previousGeneration;captureGeneration();for(int s=0;s<4;++s){if(current.files[(size_t)s].existsAsFile())loadSample(s,current.files[(size_t)s]);else clearSample(s);int index=0;for(auto name:{"gain","pitch","start","shift","fade"})if(auto*p=state.getParameter(id(s,name))){p->setValueNotifyingHost(p->convertTo0to1(current.values[(size_t)s][(size_t)index++]));}clampStartFade(s);}}
 void SampleDicerAudioProcessor::getStateInformation(juce::MemoryBlock& b){if(auto x=state.copyState().createXml())copyXmlToBinary(*x,b);}
 void SampleDicerAudioProcessor::setStateInformation(const void*d,int z){if(auto x=getXmlFromBinary(d,z)){state.replaceState(juce::ValueTree::fromXml(*x));for(int i=0;i<4;++i){auto p=state.state.getProperty("file"+juce::String(i+1)).toString();if(p.isNotEmpty())loadSample(i,juce::File(p));}}}
 juce::AudioProcessorEditor* SampleDicerAudioProcessor::createEditor(){return new SampleDicerAudioProcessorEditor(*this);}juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter(){return new SampleDicerAudioProcessor();}

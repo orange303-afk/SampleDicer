@@ -127,7 +127,11 @@ private:
     MiniDiceButton slotDice;
     ClearSlotButton clearSlot;
     juce::ToggleButton slotLock { "LOCK" };
+    juce::ToggleButton slotMute { "MUTE" };
+    juce::ToggleButton slotSolo { "SOLO" };
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> lockLink;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> muteLink;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> soloLink;
     std::array<DisplaySlider, 5> knobs;
     std::array<juce::Label, 5> labels;
     std::array<std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>, 5> links;
@@ -187,6 +191,10 @@ private:
     juce::Label masterLabel;
     DisplaySlider masterVolume;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> masterVolumeLink;
+    juce::Label masterAdsrTitle;
+    std::array<DisplaySlider, 4> masterAdsr;
+    std::array<juce::Label, 4> masterAdsrLabels;
+    std::array<std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>, 4> masterAdsrLinks;
     juce::Label randomTitle;
     juce::Label voicesLabel, burstRateLabel;
     juce::ComboBox voices;
@@ -201,9 +209,9 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> keyLink;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> roundRobinLink;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> burstRateLink;
-    std::array<DisplaySlider, 4> random;
-    std::array<juce::Label, 4> randomLabels;
-    std::array<std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>, 4> randomLinks;
+    std::array<DisplaySlider, 5> random;
+    std::array<juce::Label, 5> randomLabels;
+    std::array<std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>, 5> randomLinks;
     juce::File updateResponseFile;
     std::unique_ptr<juce::URL::DownloadTask> updateDownload;
     std::unique_ptr<juce::FileChooser> exportDirectoryChooser;

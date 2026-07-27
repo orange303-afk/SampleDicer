@@ -31,8 +31,8 @@ public:
 private:
   struct Voice { double position=-1; int delay=0; float velocity=1; float gainDb=0; float pitch=0; float start=0; float shift=0; float fade=1; float startFadeLengthMs=10; float fadeLengthMs=10; float startFadeCurve=0; float fadeCurve=0; uint32_t generation=0; bool playing=false; };
   struct Slot { juce::AudioBuffer<float> audio; juce::File file; double sourceRate=44100; std::array<Voice,16> voices; int nextVoice=0; int displayVoice=-1; std::atomic<float> displayPosition{-1.f}; std::atomic<bool> sampleReady{false}; std::atomic<uint32_t> sampleGeneration{0}; };
-  struct Generation { std::array<juce::File,4> files; std::array<std::array<float,4>,4> values{}; };
-  struct RtParameters { std::atomic<float>* gain{}; std::atomic<float>* pitch{}; std::atomic<float>* start{}; std::atomic<float>* shift{}; std::atomic<float>* fade{}; std::atomic<float>* startFadeLength{}; std::atomic<float>* fadeLength{}; std::atomic<float>* startFadeCurve{}; std::atomic<float>* fadeCurve{}; std::atomic<float>* locked{}; };
+  struct Generation { std::array<juce::File,4> files; std::array<std::array<float,5>,4> values{}; };
+  struct RtParameters { std::atomic<float>* gain{}; std::atomic<float>* pitch{}; std::atomic<float>* start{}; std::atomic<float>* shift{}; std::atomic<float>* fade{}; std::atomic<float>* startFadeLength{}; std::atomic<float>* fadeLength{}; std::atomic<float>* startFadeCurve{}; std::atomic<float>* fadeCurve{}; std::atomic<float>* locked{}; std::atomic<float>* mute{}; std::atomic<float>* solo{}; };
   static juce::AudioProcessorValueTreeState::ParameterLayout layout();
   static const char* actionParameterId(int index) noexcept;
   juce::String id(int,const juce::String&) const; void triggerAll(float velocity,int midiNote); void renderVoices(juce::AudioBuffer<float>&);
@@ -41,13 +41,23 @@ private:
   void stopAllVoices() noexcept;
   void startGlitchEvent() noexcept;
   void processGlitch(juce::AudioBuffer<float>&) noexcept;
+  void updateMasterEnvelopeParameters() noexcept;
   void captureGeneration();
   float audioRandom01() noexcept;
+  juce::Array<juce::File> collectSampleCandidates(const juce::File&, const juce::File&) const;
+  juce::File sampleFolderForSlot(int) const;
+  bool loadRandomSampleFromFolder(int, const juce::File&, const juce::File&);
+  bool anySlotSolo() const;
+  bool isSlotAudible(int) const;
+  void clampStartFade(int slot);
   std::array<Slot,4> slots; juce::AudioFormatManager formats;
+  juce::ADSR masterEnvelope;
   std::array<RtParameters,4> rtParameters;
   std::atomic<float>* rtVoices{}; std::atomic<float>* rtPte{}; std::atomic<float>* rtKey{}; std::atomic<float>* rtRoundRobin{}; std::atomic<float>* rtBurst{}; std::atomic<float>* rtBurstRate{}; std::atomic<float>* rtGlitchMode{};
   std::atomic<float>* rtMasterGain{};
-  std::atomic<float>* rtRandomVolume{}; std::atomic<float>* rtRandomPitch{}; std::atomic<float>* rtRandomStart{}; std::atomic<float>* rtRandomShift{};
+  std::atomic<float>* rtMasterAttack{}; std::atomic<float>* rtMasterDecay{};
+  std::atomic<float>* rtMasterSustain{}; std::atomic<float>* rtMasterRelease{};
+  std::atomic<float>* rtRandomVolume{}; std::atomic<float>* rtRandomPitch{}; std::atomic<float>* rtRandomStart{}; std::atomic<float>* rtRandomShift{}; std::atomic<float>* rtRandomFade{};
   juce::Random uiRandom; uint32_t audioRngState=0x9e3779b9u; double hostRate=44100; double burstCountdown=0; int heldNotes=0; int lastTriggeredNote=60; int lastRoundRobinSlot=-1; juce::CriticalSection lock;
   static constexpr int glitchDelayCapacity = 65536;
   static constexpr int glitchStutterCapacity = 8192;

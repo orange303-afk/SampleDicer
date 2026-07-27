@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(SampleDicer VERSION 1.5.2 LANGUAGES C CXX)
+project(SampleDicer VERSION 1.5.3 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/JUCE/CMakeLists.txt")
   add_subdirectory(JUCE)
@@ -18,8 +18,37 @@ target_link_libraries(SampleDicer PRIVATE juce::juce_audio_utils juce::juce_dsp 
 
 if(APPLE)
   foreach(bundle_target SampleDicer_AU SampleDicer_VST3 SampleDicer_Standalone)
+    add_custom_command(TARGET ${bundle_target} PRE_LINK
+      COMMAND /usr/bin/xattr -cr "$<TARGET_BUNDLE_DIR:${bundle_target}>"
+      VERBATIM)
     add_custom_command(TARGET ${bundle_target} POST_BUILD
+      COMMAND /usr/bin/xattr -cr "$<TARGET_BUNDLE_DIR:${bundle_target}>"
       COMMAND /usr/bin/codesign --force --deep --sign - "$<TARGET_BUNDLE_DIR:${bundle_target}>"
       VERBATIM)
   endforeach()
+
+  set(vst3_install_dir "/Library/Audio/Plug-Ins/VST3")
+  set(stale_user_vst3 "$ENV{HOME}/Library/Audio/Plug-Ins/VST3/Sample Dicer.vst3")
+  add_custom_command(TARGET SampleDicer_VST3 POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E rm -rf "${stale_user_vst3}"
+    COMMAND ${CMAKE_COMMAND} -E rm -rf "${vst3_install_dir}/Sample Dicer.vst3"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "$<TARGET_BUNDLE_DIR:SampleDicer_VST3>"
+            "${vst3_install_dir}/Sample Dicer.vst3"
+    COMMAND /usr/bin/xattr -dr com.apple.quarantine "${vst3_install_dir}/Sample Dicer.vst3"
+    COMMAND /usr/bin/xattr -cr "${vst3_install_dir}/Sample Dicer.vst3"
+    COMMENT "Installing VST3 to ${vst3_install_dir}"
+    VERBATIM)
+elseif(WIN32 AND NOT DEFINED ENV{CI})
+  if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(vst3_install_dir "$ENV{CommonProgramW6432}/VST3")
+  else()
+    set(vst3_install_dir "$ENV{CommonProgramFiles(x86)}/VST3")
+  endif()
+  add_custom_command(TARGET SampleDicer_VST3 POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${vst3_install_dir}"
+    COMMAND ${CMAKE_COMMAND} -E rm -rf "${vst3_install_dir}/Sample Dicer.vst3"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "$<TARGET_BUNDLE_DIR:SampleDicer_VST3>"
+            "${vst3_install_dir}/Sample Dicer.vst3"
+    COMMENT "Installing VST3 to ${vst3_install_dir}"
+    VERBATIM)
 endif()

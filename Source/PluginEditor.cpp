@@ -3,7 +3,7 @@
 namespace
 {
 constexpr int designWidth = 820;
-constexpr int designHeight = 875;
+constexpr int designHeight = 904;
 constexpr float minimumScale = 0.60f;
 constexpr float maximumScale = 2.0f;
 constexpr auto releasesUrl = "https://github.com/orange303-afk/SampleDicer/releases";
@@ -678,8 +678,16 @@ SlotView::SlotView(SampleDicerAudioProcessor& p, int index)
     addAndMakeVisible(clearSlot);
     slotLock.setTooltip("Exclude this slot from DICE and per-trigger randomization");
     addAndMakeVisible(slotLock);
+    slotMute.setTooltip("Mute this slot without affecting DICE or parameter randomization");
+    addAndMakeVisible(slotMute);
+    slotSolo.setTooltip("Solo this slot; when any slot is soloed, only soloed slots are heard");
+    addAndMakeVisible(slotSolo);
     lockLink = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
         processor.state, "slot" + juce::String(index + 1) + ".lock", slotLock);
+    muteLink = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
+        processor.state, "slot" + juce::String(index + 1) + ".mute", slotMute);
+    soloLink = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
+        processor.state, "slot" + juce::String(index + 1) + ".solo", slotSolo);
 
     const std::array<juce::String, 5> names { "VOLUME", "PITCH", "START", "SHIFT", "FADE" };
     const std::array<juce::String, 5> ids { "gain", "pitch", "start", "shift", "fade" };
@@ -747,6 +755,10 @@ void SlotView::setTheme(const DicerTheme& newTheme)
     file.setColour(juce::Label::textColourId, theme.secondaryText);
     slotLock.setColour(juce::ToggleButton::tickColourId, theme.accent);
     slotLock.setColour(juce::ToggleButton::textColourId, theme.secondaryText);
+    slotMute.setColour(juce::ToggleButton::tickColourId, theme.accent);
+    slotMute.setColour(juce::ToggleButton::textColourId, theme.secondaryText);
+    slotSolo.setColour(juce::ToggleButton::tickColourId, theme.accent);
+    slotSolo.setColour(juce::ToggleButton::textColourId, theme.secondaryText);
     slotDice.setTheme(theme);
     clearSlot.setTheme(theme);
     for (auto& label : labels)
@@ -1231,7 +1243,11 @@ void SlotView::resized()
     slotDice.setBounds(header.removeFromRight(27));
     header.removeFromRight(3);
     next.setBounds(header.removeFromRight(27));
-    slotLock.setBounds(header.removeFromRight(65));
+    slotLock.setBounds(header.removeFromRight(58));
+    header.removeFromRight(3);
+    slotSolo.setBounds(header.removeFromRight(54));
+    header.removeFromRight(3);
+    slotMute.setBounds(header.removeFromRight(56));
     file.setBounds(header.reduced(6, 0));
     waveformArea = area.removeFromTop(36);
     area.removeFromTop(3);
@@ -1294,8 +1310,8 @@ SampleDicerAudioProcessorEditor::SampleDicerAudioProcessorEditor(SampleDicerAudi
         slots[i] = std::make_unique<SlotView>(processor, static_cast<int>(i));
         content.addAndMakeVisible(*slots[i]);
     }
-    const std::array<juce::String, 4> names { "VOLUME", "PITCH", "START", "SHIFT" };
-    const std::array<juce::String, 4> ids { "volume", "pitch", "start", "shift" };
+    const std::array<juce::String, 5> names { "VOLUME", "PITCH", "START", "SHIFT", "FADE" };
+    const std::array<juce::String, 5> ids { "volume", "pitch", "start", "shift", "fade" };
     for (size_t i = 0; i < random.size(); ++i)
     {
         randomLabels[i].setText(names[i], juce::dontSendNotification);
@@ -1342,6 +1358,38 @@ SampleDicerAudioProcessorEditor::SampleDicerAudioProcessorEditor(SampleDicerAudi
     content.addAndMakeVisible(masterVolume);
     masterVolumeLink = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
         processor.state, "global.masterGain", masterVolume);
+    masterAdsrTitle.setText("MASTER ADSR", juce::dontSendNotification);
+    masterAdsrTitle.setFont(juce::FontOptions(11.0f, juce::Font::bold));
+    masterAdsrTitle.setJustificationType(juce::Justification::centred);
+    content.addAndMakeVisible(masterAdsrTitle);
+    const std::array<juce::String, 4> adsrNames { "ATTACK", "DECAY", "SUSTAIN", "RELEASE" };
+    const std::array<juce::String, 4> adsrIds {
+        "global.masterAttack", "global.masterDecay", "global.masterSustain", "global.masterRelease"
+    };
+    const std::array<double, 4> adsrDefaults { 0.0, 0.0, 1.0, 10000.0 };
+    for (size_t i = 0; i < masterAdsr.size(); ++i)
+    {
+        masterAdsrLabels[i].setText(adsrNames[i], juce::dontSendNotification);
+        masterAdsrLabels[i].setFont(juce::FontOptions(8.5f, juce::Font::bold));
+        masterAdsrLabels[i].setJustificationType(juce::Justification::centred);
+        masterAdsr[i].setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+        masterAdsr[i].setTextBoxStyle(juce::Slider::TextBoxBelow, false, 61, 16);
+        masterAdsr[i].setDoubleClickReturnValue(true, adsrDefaults[i]);
+        if (i == 2)
+        {
+            masterAdsr[i].setDisplayScale(100.0);
+            masterAdsr[i].setTextValueSuffix(" %");
+        }
+        else
+        {
+            masterAdsr[i].setTextValueSuffix(" ms");
+        }
+        masterAdsr[i].setTooltip(adsrNames[i] + " for the master output amplitude envelope");
+        content.addAndMakeVisible(masterAdsrLabels[i]);
+        content.addAndMakeVisible(masterAdsr[i]);
+        masterAdsrLinks[i] = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+            processor.state, adsrIds[i], masterAdsr[i]);
+    }
     voicesLabel.setText("VOICES", juce::dontSendNotification);
     voicesLabel.setFont(juce::FontOptions(10.5f, juce::Font::bold));
     voicesLabel.setColour(juce::Label::textColourId, juce::Colour(0xff9299a5));
@@ -1555,9 +1603,13 @@ void SampleDicerAudioProcessorEditor::setInterfaceTextGlitch(bool enabled, uint3
     voicesLabel.setText(text("VOICES", 3), juce::dontSendNotification);
     burstRateLabel.setText(text("RATE", 4), juce::dontSendNotification);
     masterLabel.setText(text("MASTER", 5), juce::dontSendNotification);
-    const std::array<juce::String, 4> randomNames { "VOLUME", "PITCH", "START", "SHIFT" };
+    masterAdsrTitle.setText(text("MASTER ADSR", 6), juce::dontSendNotification);
+    const std::array<juce::String, 5> randomNames { "VOLUME", "PITCH", "START", "SHIFT", "FADE" };
     for (size_t i = 0; i < randomLabels.size(); ++i)
         randomLabels[i].setText(text(randomNames[i], 10 + static_cast<uint32_t>(i)), juce::dontSendNotification);
+    const std::array<juce::String, 4> adsrNames { "ATTACK", "DECAY", "SUSTAIN", "RELEASE" };
+    for (size_t i = 0; i < masterAdsrLabels.size(); ++i)
+        masterAdsrLabels[i].setText(text(adsrNames[i], 30 + static_cast<uint32_t>(i)), juce::dontSendNotification);
     burst.setButtonText(text("BURST", 20));
     key.setButtonText(text("KEY", 21));
     pte.setButtonText(text("PTE", 22));
@@ -1611,6 +1663,9 @@ void SampleDicerAudioProcessorEditor::updateComponentColours()
     voicesLabel.setColour(juce::Label::textColourId, currentTheme.mutedText);
     burstRateLabel.setColour(juce::Label::textColourId, currentTheme.mutedText);
     masterLabel.setColour(juce::Label::textColourId, currentTheme.mutedText);
+    masterAdsrTitle.setColour(juce::Label::textColourId, currentTheme.mutedText);
+    for (auto& label : masterAdsrLabels)
+        label.setColour(juce::Label::textColourId, currentTheme.secondaryText);
     for (auto* toggle : { &burst, &pte, &key, &roundRobin })
     {
         toggle->setColour(juce::ToggleButton::textColourId, currentTheme.primaryText);
@@ -1769,9 +1824,20 @@ void SampleDicerAudioProcessorEditor::resized()
     back.setBounds(generationButtons.removeFromLeft(82).reduced(0, 2));
     generationButtons.removeFromLeft(6);
     dice.setBounds(generationButtons.reduced(0, 2));
-    buttons.removeFromTop(6);
-    samples.setBounds(buttons.removeFromLeft(buttons.getWidth() / 2).reduced(2));
-    params.setBounds(buttons.reduced(2));
+    buttons.removeFromTop(4);
+    auto actionButtons = buttons.removeFromTop(32);
+    samples.setBounds(actionButtons.removeFromLeft(actionButtons.getWidth() / 2).reduced(2, 1));
+    params.setBounds(actionButtons.reduced(2, 1));
+    buttons.removeFromTop(3);
+    masterAdsrTitle.setBounds(buttons.removeFromTop(16));
+    auto adsrArea = buttons;
+    const auto adsrWidth = adsrArea.getWidth() / static_cast<int>(masterAdsr.size());
+    for (size_t i = 0; i < masterAdsr.size(); ++i)
+    {
+        auto column = i + 1 == masterAdsr.size() ? adsrArea : adsrArea.removeFromLeft(adsrWidth);
+        masterAdsrLabels[i].setBounds(column.removeFromTop(14));
+        masterAdsr[i].setBounds(column);
+    }
 }
 
 void SampleDicerAudioProcessorEditor::timerCallback()
