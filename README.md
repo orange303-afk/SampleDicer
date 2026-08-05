@@ -111,3 +111,5 @@ If you enjoy Sample Dicer and would like to support its development, you can
 BTC: bc1qyslgnxddg0d0wtdt028sk58zzu3pezlvqu50zs
 
 ETH: 0x0d24ca73E4A61aaA1d54695C740B9e78C73F79e6
+
+USDT (TRC20): TR2t7ivAzwAcvsbYXSHCCifyAggrWqELXt

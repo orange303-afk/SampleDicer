@@ -188,7 +188,8 @@ public:
         crypto.setFont(juce::FontOptions(12.0f));
         crypto.setJustification(juce::Justification::centredTop);
         crypto.setText("BTC: bc1qyslgnxddg0d0wtdt028sk58zzu3pezlvqu50zs\n\n"
-                       "ETH: 0x0d24ca73E4A61aaA1d54695C740B9e78C73F79e6",
+                       "ETH: 0x0d24ca73E4A61aaA1d54695C740B9e78C73F79e6\n\n"
+                       "USDT (TRC20): TR2t7ivAzwAcvsbYXSHCCifyAggrWqELXt",
                        false);
         addAndMakeVisible(crypto);
         setSize(520, 285);
