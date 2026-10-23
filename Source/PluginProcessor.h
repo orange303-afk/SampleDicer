@@ -21,6 +21,14 @@ public:
   bool loadSample(int,const juce::File&); bool browse(int,int); juce::String sampleName(int) const;
   void clearSample(int slot);
   juce::File sampleFile(int) const;
+  juce::File sampleFolderForSlot(int slot) const;
+  void setSlotFolder(int slot, const juce::File& folder);
+  juce::File lastFolder() const;
+  void playAuditionSample(const juce::File& file, float gain = 0.8f);
+  void stopAudition();
+  bool isAuditioning() const noexcept;
+  void setAuditionGain(float gain) noexcept;
+  float getAuditionGain() const noexcept;
   float playheadPosition(int) const;
   bool renderCurrentSoundToFile(const juce::File&, bool useAiff, juce::String& errorMessage);
   uint32_t glitchVisualGeneration() const noexcept { return glitchTriggerGeneration.load(std::memory_order_acquire); }
@@ -45,11 +53,15 @@ private:
   void captureGeneration();
   float audioRandom01() noexcept;
   juce::Array<juce::File> collectSampleCandidates(const juce::File&, const juce::File&) const;
-  juce::File sampleFolderForSlot(int) const;
   bool loadRandomSampleFromFolder(int, const juce::File&, const juce::File&);
   bool anySlotSolo() const;
   bool isSlotAudible(int) const;
   void clampStartFade(int slot);
+  juce::AudioBuffer<float> auditionBuffer;
+  double auditionSampleRate = 44100.0;
+  std::atomic<float> auditionGain { 0.8f };
+  std::atomic<int> auditionReadPos { -1 };
+  juce::SpinLock auditionLock;
   std::array<Slot,4> slots; juce::AudioFormatManager formats;
   juce::ADSR masterEnvelope;
   std::array<RtParameters,4> rtParameters;

@@ -22,8 +22,8 @@ jobs:
       - name: Configure
         run: cmake -S . -B build -G "Visual Studio 17 2022" -A x64
 
-      - name: Build VST3
-        run: cmake --build build --config Release --target SampleDicer_VST3
+      - name: Build VST3 and Standalone
+        run: cmake --build build --config Release --target SampleDicer_VST3 SampleDicer_Standalone
 
       - name: Package VST3
         shell: pwsh
@@ -32,8 +32,17 @@ jobs:
             -Path "build/SampleDicer_artefacts/Release/VST3/Sample Dicer.vst3" `
             -DestinationPath "Sample-Dicer-1.5.3-Windows-x64-VST3.zip"
 
+      - name: Package All Windows Artifacts
+        shell: pwsh
+        run: |
+          Compress-Archive `
+            -Path "build/SampleDicer_artefacts/Release/VST3/Sample Dicer.vst3", "build/SampleDicer_artefacts/Release/Standalone/Sample Dicer.exe" `
+            -DestinationPath "Sample-Dicer-1.5.3-Windows-x64.zip"
+
       - name: Store workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Sample-Dicer-1.5.3-Windows-x64-VST3
-          path: Sample-Dicer-1.5.3-Windows-x64-VST3.zip
+          name: Sample-Dicer-1.5.3-Windows-x64
+          path: |
+            Sample-Dicer-1.5.3-Windows-x64.zip
+            Sample-Dicer-1.5.3-Windows-x64-VST3.zip

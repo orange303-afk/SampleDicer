@@ -1,0 +1,45 @@
+#!/bin/bash
+set -e
+
+APP_PATH="/Applications/Sample Dicer.app"
+AU_PATH="/Library/Audio/Plug-Ins/Components/Sample Dicer.component"
+VST3_PATH="/Library/Audio/Plug-Ins/VST3/Sample Dicer.vst3"
+
+echo "=== Running post-installation tasks for Sample Dicer ==="
+
+if [ -d "$APP_PATH" ]; then
+    echo "Configuring Standalone application at: $APP_PATH"
+    /usr/bin/xattr -cr "$APP_PATH" 2>/dev/null || true
+    /usr/bin/xattr -dr com.apple.quarantine "$APP_PATH" 2>/dev/null || true
+    /bin/chmod -R 755 "$APP_PATH"
+    if [ -f "$APP_PATH/Contents/MacOS/Sample Dicer" ]; then
+        /bin/chmod +x "$APP_PATH/Contents/MacOS/Sample Dicer"
+    fi
+fi
+
+if [ -d "$AU_PATH" ]; then
+    echo "Configuring AU plugin at: $AU_PATH"
+    /usr/bin/xattr -cr "$AU_PATH" 2>/dev/null || true
+    /usr/bin/xattr -dr com.apple.quarantine "$AU_PATH" 2>/dev/null || true
+    /bin/chmod -R 755 "$AU_PATH"
+    if [ -f "$AU_PATH/Contents/MacOS/Sample Dicer" ]; then
+        /bin/chmod +x "$AU_PATH/Contents/MacOS/Sample Dicer"
+    fi
+fi
+
+if [ -d "$VST3_PATH" ]; then
+    echo "Configuring VST3 plugin at: $VST3_PATH"
+    /usr/bin/xattr -cr "$VST3_PATH" 2>/dev/null || true
+    /usr/bin/xattr -dr com.apple.quarantine "$VST3_PATH" 2>/dev/null || true
+    /bin/chmod -R 755 "$VST3_PATH"
+    if [ -f "$VST3_PATH/Contents/MacOS/Sample Dicer" ]; then
+        /bin/chmod +x "$VST3_PATH/Contents/MacOS/Sample Dicer"
+    fi
+fi
+
+# Clear AU registration cache so DAWs pick up the plugin immediately without reboot
+echo "Refreshing audio component registrar..."
+/usr/bin/killall -9 AudioComponentRegistrar 2>/dev/null || true
+
+echo "=== Post-install completed successfully ==="
+exit 0

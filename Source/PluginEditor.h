@@ -1,6 +1,7 @@
 #pragma once
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
+#include "UI/SampleBrowserModalComponent.h"
 
 struct DicerTheme
 {
@@ -91,6 +92,45 @@ private:
     DicerTheme theme;
 };
 
+class SlotBrowseButton : public juce::Button
+{
+public:
+    SlotBrowseButton() : juce::Button("Load Sample") {}
+    void setTheme(const DicerTheme& newTheme) { theme = newTheme; repaint(); }
+    void paintButton(juce::Graphics& g, bool highlighted, bool down) override
+    {
+        auto background = theme.button;
+        if (highlighted) background = background.brighter(0.12f);
+        if (down) background = background.darker(0.12f);
+        g.setColour(background);
+        g.fillRoundedRectangle(getLocalBounds().toFloat(), 4.0f);
+        g.setColour(highlighted ? theme.accent : juce::Colour(0xff3a4254));
+        g.drawRoundedRectangle(getLocalBounds().toFloat().reduced(0.5f), 4.0f, 1.0f);
+
+        auto iconBounds = getLocalBounds().toFloat().withSizeKeepingCentre(13.0f, 10.0f);
+        const float x = iconBounds.getX();
+        const float y = iconBounds.getY();
+        const float w = iconBounds.getWidth();
+        const float h = iconBounds.getHeight();
+
+        juce::Path folder;
+        folder.startNewSubPath(x, y + 2.2f);
+        folder.lineTo(x, y + h);
+        folder.lineTo(x + w, y + h);
+        folder.lineTo(x + w, y + 2.0f);
+        folder.lineTo(x + w * 0.55f, y + 2.0f);
+        folder.lineTo(x + w * 0.40f, y);
+        folder.lineTo(x + 1.0f, y);
+        folder.lineTo(x, y + 1.0f);
+        folder.closeSubPath();
+
+        g.setColour(highlighted ? theme.accent.brighter(0.2f) : theme.accent);
+        g.strokePath(folder, juce::PathStrokeType(1.2f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+    }
+private:
+    DicerTheme theme;
+};
+
 class SlotView : public juce::Component,
                  public juce::FileDragAndDropTarget,
                  private juce::ChangeListener
@@ -125,6 +165,7 @@ private:
     juce::Label title, file;
     juce::TextButton previous { "<" }, next { ">" };
     MiniDiceButton slotDice;
+    SlotBrowseButton slotBrowse;
     ClearSlotButton clearSlot;
     juce::ToggleButton slotLock { "LOCK" };
     juce::ToggleButton slotMute { "MUTE" };
@@ -162,6 +203,8 @@ public:
     ~SampleDicerAudioProcessorEditor() override;
     void paint(juce::Graphics&) override;
     void resized() override;
+    void openSampleBrowserForSlot(int slot);
+    bool keyPressed(const juce::KeyPress& keyPress) override;
 
 private:
     void timerCallback() override;
@@ -227,5 +270,7 @@ private:
     int exportStatusFrames = 0;
     bool glitchVisualActive = false;
     bool glitchModeWasEnabled = false;
+    sampledicer::SampleBrowserModalComponent sampleBrowserModal;
+    int currentBrowserSlot = 0;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SampleDicerAudioProcessorEditor)
 };

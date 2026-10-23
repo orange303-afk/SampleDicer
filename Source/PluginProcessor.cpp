@@ -176,6 +176,72 @@ juce::File SampleDicerAudioProcessor::sampleFolderForSlot(int s)const{
   auto path=settings!=nullptr?settings->getValue("lastFolder"):juce::String{};
   if(path.isEmpty())path=state.state.getProperty("lastFolder").toString();
   return juce::File(path);}
+void SampleDicerAudioProcessor::setSlotFolder(int s, const juce::File& folder)
+{
+  if (!juce::isPositiveAndBelow(s, 4) || !folder.isDirectory()) return;
+  state.state.setProperty("slotFolder" + juce::String(s + 1), folder.getFullPathName(), nullptr);
+  state.state.setProperty("lastFolder", folder.getFullPathName(), nullptr);
+  if (settings != nullptr)
+  {
+    settings->setValue("slotFolder" + juce::String(s + 1), folder.getFullPathName());
+    settings->setValue("lastFolder", folder.getFullPathName());
+    settings->saveIfNeeded();
+  }
+}
+juce::File SampleDicerAudioProcessor::lastFolder() const
+{
+  auto path = settings != nullptr ? settings->getValue("lastFolder") : juce::String{};
+  if (path.isEmpty()) path = state.state.getProperty("lastFolder").toString();
+  return juce::File(path);
+}
+void SampleDicerAudioProcessor::playAuditionSample(const juce::File& file, float gain)
+{
+  if (!file.existsAsFile())
+  {
+    stopAudition();
+    return;
+  }
+  std::unique_ptr<juce::AudioFormatReader> reader(formats.createReaderFor(file));
+  if (reader == nullptr)
+  {
+    stopAudition();
+    return;
+  }
+  const int numSamples = static_cast<int>(reader->lengthInSamples);
+  if (numSamples <= 0)
+  {
+    stopAudition();
+    return;
+  }
+  const int maxSamples = static_cast<int>(reader->sampleRate * 60.0);
+  const int samplesToRead = juce::jmin(numSamples, maxSamples);
+  juce::AudioBuffer<float> newBuf(static_cast<int>(reader->numChannels), samplesToRead);
+  reader->read(&newBuf, 0, samplesToRead, 0, true, true);
+  const double sr = reader->sampleRate;
+  {
+    const juce::SpinLock::ScopedLockType sl(auditionLock);
+    auditionBuffer = std::move(newBuf);
+    auditionSampleRate = sr > 0.0 ? sr : hostRate;
+    auditionGain.store(gain, std::memory_order_relaxed);
+    auditionReadPos.store(0, std::memory_order_release);
+  }
+}
+void SampleDicerAudioProcessor::stopAudition()
+{
+  auditionReadPos.store(-1, std::memory_order_release);
+}
+bool SampleDicerAudioProcessor::isAuditioning() const noexcept
+{
+  return auditionReadPos.load(std::memory_order_acquire) >= 0;
+}
+void SampleDicerAudioProcessor::setAuditionGain(float gain) noexcept
+{
+  auditionGain.store(juce::jlimit(0.0f, 2.0f, gain), std::memory_order_relaxed);
+}
+float SampleDicerAudioProcessor::getAuditionGain() const noexcept
+{
+  return auditionGain.load(std::memory_order_relaxed);
+}
 bool SampleDicerAudioProcessor::loadRandomSampleFromFolder(int s,const juce::File& folder,const juce::File& exclude){
   const auto candidates=collectSampleCandidates(folder,exclude);
   if(candidates.isEmpty())return false;
@@ -348,6 +414,7 @@ void SampleDicerAudioProcessor::stopAllVoices() noexcept
 {
   heldNotes=0;burstCountdown=0;lastRoundRobinSlot=-1;
   masterEnvelope.reset();
+  stopAudition();
   for(auto& slot:slots){for(auto& voice:slot.voices){voice.playing=false;voice.position=-1;voice.delay=0;}slot.displayVoice=-1;slot.displayPosition.store(-1.f,std::memory_order_release);}
   glitchSamplesRemaining=0;glitchCapturing=false;glitchStutterRepeats=0;glitchStutterPosition=0;glitchHoldCounter=0;glitchWritePosition=0;glitchHeldSample.fill(0.0f);
   for(auto& channel:glitchDelayBuffer)channel.fill(0.0f);for(auto& channel:glitchStutterBuffer)channel.fill(0.0f);
@@ -376,7 +443,52 @@ void SampleDicerAudioProcessor::processBlock(juce::AudioBuffer<float>& out,juce:
   bool started=false;
   for(auto m:midi){auto message=m.getMessage();if(message.isNoteOn()){++heldNotes;masterEnvelope.noteOn();lastTriggeredNote=message.getNoteNumber();if(rtGlitchMode->load()>.5f)startGlitchEvent();triggerAll(message.getFloatVelocity(),lastTriggeredNote);started=true;}else if(message.isNoteOff()){heldNotes=juce::jmax(0,heldNotes-1);if(heldNotes==0)masterEnvelope.noteOff();}else if(message.isAllNotesOff()||message.isAllSoundOff()){heldNotes=0;masterEnvelope.noteOff();}}
   const auto burst=rtBurst->load()>.5f;const auto interval=hostRate/rtBurstRate->load();if(!burst||heldNotes==0)burstCountdown=0;else{if(started||burstCountdown<=0)burstCountdown=interval;burstCountdown-=out.getNumSamples();while(burstCountdown<=0){triggerAll(1.f,lastTriggeredNote);burstCountdown+=interval;}}
-  {const juce::ScopedTryLock guard(lock);if(guard.isLocked())renderVoices(out);}if(rtGlitchMode->load()>.5f)processGlitch(out);else{glitchSamplesRemaining=0;glitchCapturing=false;glitchStutterRepeats=0;}masterEnvelope.applyEnvelopeToBuffer(out,0,out.getNumSamples());out.applyGain(juce::Decibels::decibelsToGain(rtMasterGain->load()));}
+  {const juce::ScopedTryLock guard(lock);if(guard.isLocked())renderVoices(out);}if(rtGlitchMode->load()>.5f)processGlitch(out);else{glitchSamplesRemaining=0;glitchCapturing=false;glitchStutterRepeats=0;}masterEnvelope.applyEnvelopeToBuffer(out,0,out.getNumSamples());out.applyGain(juce::Decibels::decibelsToGain(rtMasterGain->load()));
+  int curAuditionPos = auditionReadPos.load(std::memory_order_acquire);
+  if (curAuditionPos >= 0)
+  {
+    const juce::SpinLock::ScopedTryLockType aLock(auditionLock);
+    if (aLock.isLocked())
+    {
+      const int totalAuditionSamples = auditionBuffer.getNumSamples();
+      if (curAuditionPos < totalAuditionSamples)
+      {
+        const int numSamplesToRender = out.getNumSamples();
+        const int channels = juce::jmin(out.getNumChannels(), auditionBuffer.getNumChannels());
+        const float g = auditionGain.load(std::memory_order_relaxed);
+        const double speedRatio = (auditionSampleRate > 0.0 && hostRate > 0.0)
+                                    ? (auditionSampleRate / hostRate) : 1.0;
+        for (int i = 0; i < numSamplesToRender; ++i)
+        {
+          const int sampleIdx = static_cast<int>(curAuditionPos + i * speedRatio);
+          if (sampleIdx >= totalAuditionSamples)
+          {
+            auditionReadPos.store(-1, std::memory_order_release);
+            break;
+          }
+          for (int ch = 0; ch < out.getNumChannels(); ++ch)
+          {
+            const int srcCh = (ch < channels) ? ch : 0;
+            const float s = auditionBuffer.getSample(srcCh, sampleIdx) * g;
+            out.addSample(ch, i, s);
+          }
+        }
+        if (auditionReadPos.load(std::memory_order_relaxed) >= 0)
+        {
+          const int advancedPos = static_cast<int>(curAuditionPos + numSamplesToRender * speedRatio);
+          if (advancedPos >= totalAuditionSamples)
+            auditionReadPos.store(-1, std::memory_order_release);
+          else
+            auditionReadPos.store(advancedPos, std::memory_order_release);
+        }
+      }
+      else
+      {
+        auditionReadPos.store(-1, std::memory_order_release);
+      }
+    }
+  }
+}
 void SampleDicerAudioProcessor::captureGeneration(){for(int s=0;s<4;++s){previousGeneration.files[(size_t)s]=slots[(size_t)s].file;int index=0;for(auto name:{"gain","pitch","start","shift","fade"})previousGeneration.values[(size_t)s][(size_t)index++]=state.getRawParameterValue(id(s,name))->load();}hasPreviousGeneration=true;}
 void SampleDicerAudioProcessor::dice(bool files,bool values){captureGeneration();for(int s=0;s<4;++s){if(state.getRawParameterValue(id(s,"lock"))->load()>.5f)continue;if(files)loadRandomSampleFromFolder(s,sampleFolderForSlot(s),slots[(size_t)s].file);if(values)for(auto name:{"gain","pitch","start","shift","fade"}){auto* p=state.getParameter(id(s,name));auto amount=state.getRawParameterValue("random."+juce::String(juce::String(name)=="gain"?"volume":name))->load();p->setValueNotifyingHost(juce::jlimit(0.f,1.f,p->getValue()+(uiRandom.nextFloat()*2-1)*amount));}clampStartFade(s);}}
 bool SampleDicerAudioProcessor::diceSlot(int s)

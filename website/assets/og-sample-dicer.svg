@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0a0c0e"/>
+      <stop offset="0.58" stop-color="#101316"/>
+      <stop offset="1" stop-color="#17242a"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="72%" cy="45%" r="48%">
+      <stop offset="0" stop-color="#28c7e8" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#28c7e8" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M48 0H0V48" fill="none" stroke="#ffffff" stroke-opacity=".035"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+  <circle cx="1080" cy="300" r="275" fill="none" stroke="#62d9ef" stroke-opacity=".08"/>
+  <circle cx="1080" cy="300" r="200" fill="none" stroke="#62d9ef" stroke-opacity=".07"/>
+
+  <g transform="translate(78 66)">
+    <rect width="42" height="42" rx="11" fill="#202831" stroke="#62d9ef" stroke-opacity=".75" transform="rotate(-5 21 21)"/>
+    <g fill="#62d9ef">
+      <circle cx="13" cy="13" r="3.1"/><circle cx="29" cy="13" r="3.1"/>
+      <circle cx="13" cy="21" r="3.1"/><circle cx="29" cy="21" r="3.1"/>
+      <circle cx="13" cy="29" r="3.1"/><circle cx="29" cy="29" r="3.1"/>
+    </g>
+    <text x="62" y="28" fill="#f2f6f7" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" letter-spacing="4">SAMPLE DICER</text>
+  </g>
+
+  <text x="78" y="223" fill="#f2f6f7" font-family="Arial, Helvetica, sans-serif" font-size="72" font-weight="700" letter-spacing="-3">FREE ONE-SHOT</text>
+  <text x="78" y="302" fill="none" stroke="#62d9ef" stroke-width="1.5" font-family="Arial, Helvetica, sans-serif" font-size="72" font-weight="700" letter-spacing="-3">SAMPLER PLUGIN</text>
+  <text x="82" y="361" fill="#aab6ba" font-family="Arial, Helvetica, sans-serif" font-size="22">Four layers. Controlled randomisation. Evolving sounds.</text>
+
+  <g transform="translate(78 420)">
+    <rect width="650" height="104" rx="14" fill="#181c20" stroke="#343c42"/>
+    <text x="22" y="29" fill="#879398" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" letter-spacing="2">SLOT 01 · IMPACT.WAV</text>
+    <path d="M22 64L31 61L37 39L44 88L51 50L59 73L68 57L76 70L84 44L94 83L103 53L112 70L122 58L132 68L143 49L154 79L165 56L176 68L188 54L201 74L214 59L228 67L242 57L257 69L273 60L290 66L307 58L326 69L345 60L366 66L387 59L410 67L434 61L460 66L488 61L520 65L555 62L598 64L628 63" fill="none" stroke="#62d9ef" stroke-width="2" opacity=".82"/>
+    <line x1="180" y1="39" x2="180" y2="89" stroke="#ff6f91" stroke-width="2"/>
+  </g>
+
+  <g transform="translate(780 408)">
+    <rect width="270" height="116" rx="14" fill="#62d9ef"/>
+    <rect x="88" y="22" width="72" height="72" rx="16" fill="#172228" transform="rotate(-5 124 58)"/>
+    <g fill="#62d9ef">
+      <circle cx="106" cy="40" r="5"/><circle cx="142" cy="40" r="5"/>
+      <circle cx="106" cy="58" r="5"/><circle cx="142" cy="58" r="5"/>
+      <circle cx="106" cy="76" r="5"/><circle cx="142" cy="76" r="5"/>
+    </g>
+    <text x="181" y="65" fill="#071014" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" letter-spacing="2">ROLL</text>
+  </g>
+
+  <g transform="translate(78 570)" fill="#879398" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" letter-spacing="2">
+    <text x="0" y="0">VST3</text><circle cx="72" cy="-5" r="3" fill="#28c7e8"/>
+    <text x="92" y="0">AU</text><circle cx="136" cy="-5" r="3" fill="#28c7e8"/>
+    <text x="156" y="0">STANDALONE</text><circle cx="284" cy="-5" r="3" fill="#28c7e8"/>
+    <text x="304" y="0">WINDOWS + MACOS</text>
+  </g>
+  <text x="1122" y="579" fill="#62d9ef" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" text-anchor="end">SAMPLEDICER.PRO</text>
+</svg>

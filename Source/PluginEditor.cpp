@@ -162,6 +162,7 @@ class AboutPanel : public juce::Component
 public:
     explicit AboutPanel(const DicerTheme& selectedTheme)
         : theme(selectedTheme),
+          getPro("Get Sample Dicer PRO", juce::URL("https://ilyaorange.gumroad.com/l/sampledicerpro")),
           productWebsite("sampledicer.pro", juce::URL("https://sampledicer.pro/")),
           website("ilyaorange.tilda.ws", juce::URL("https://ilyaorange.tilda.ws")),
           bandcamp("ilyaorange.bandcamp.com", juce::URL("https://ilyaorange.bandcamp.com")),
@@ -174,7 +175,8 @@ public:
         title.setFont(juce::FontOptions(15.0f, juce::Font::bold));
         title.setColour(juce::Label::textColourId, theme.primaryText);
         addAndMakeVisible(title);
-        for (auto* link : { &productWebsite, &website, &bandcamp, &gumroad, &donate })
+        getPro.setFont(juce::FontOptions(13.0f, juce::Font::bold), false);
+        for (auto* link : { &getPro, &productWebsite, &website, &bandcamp, &gumroad, &donate })
         {
             link->setColour(juce::HyperlinkButton::textColourId, theme.accent);
             addAndMakeVisible(link);
@@ -192,7 +194,7 @@ public:
                        "USDT (TRC20): TR2t7ivAzwAcvsbYXSHCCifyAggrWqELXt",
                        false);
         addAndMakeVisible(crypto);
-        setSize(520, 285);
+        setSize(520, 315);
     }
 
     void paint(juce::Graphics& g) override
@@ -205,7 +207,7 @@ public:
         auto area = getLocalBounds().reduced(14);
         title.setBounds(area.removeFromTop(31));
         area.removeFromTop(3);
-        for (auto* link : { &productWebsite, &website, &bandcamp, &gumroad, &donate })
+        for (auto* link : { &getPro, &productWebsite, &website, &bandcamp, &gumroad, &donate })
             link->setBounds(area.removeFromTop(27));
         area.removeFromTop(5);
         crypto.setBounds(area);
@@ -214,7 +216,7 @@ public:
 private:
     DicerTheme theme;
     juce::Label title;
-    juce::HyperlinkButton productWebsite, website, bandcamp, gumroad, donate;
+    juce::HyperlinkButton getPro, productWebsite, website, bandcamp, gumroad, donate;
     juce::TextEditor crypto;
 };
 
@@ -675,6 +677,13 @@ SlotView::SlotView(SampleDicerAudioProcessor& p, int index)
     addAndMakeVisible(title); addAndMakeVisible(file); addAndMakeVisible(previous); addAndMakeVisible(next);
     slotDice.setTooltip("Choose a random sample from this slot's folder; host parameter: Randomize Slot Sample Trigger");
     addAndMakeVisible(slotDice);
+    slotBrowse.setTooltip("Open sample library browser for this slot");
+    slotBrowse.onClick = [this]
+    {
+        if (auto* ed = findParentComponentOfClass<SampleDicerAudioProcessorEditor>())
+            ed->openSampleBrowserForSlot(slot);
+    };
+    addAndMakeVisible(slotBrowse);
     clearSlot.setTooltip("Remove the sample from this slot");
     addAndMakeVisible(clearSlot);
     slotLock.setTooltip("Exclude this slot from DICE and per-trigger randomization");
@@ -761,6 +770,7 @@ void SlotView::setTheme(const DicerTheme& newTheme)
     slotSolo.setColour(juce::ToggleButton::tickColourId, theme.accent);
     slotSolo.setColour(juce::ToggleButton::textColourId, theme.secondaryText);
     slotDice.setTheme(theme);
+    slotBrowse.setTheme(theme);
     clearSlot.setTheme(theme);
     for (auto& label : labels)
         label.setColour(juce::Label::textColourId, theme.mutedText);
@@ -1241,6 +1251,8 @@ void SlotView::resized()
     previous.setBounds(header.removeFromLeft(27));
     clearSlot.setBounds(header.removeFromRight(27));
     header.removeFromRight(3);
+    slotBrowse.setBounds(header.removeFromRight(27));
+    header.removeFromRight(3);
     slotDice.setBounds(header.removeFromRight(27));
     header.removeFromRight(3);
     next.setBounds(header.removeFromRight(27));
@@ -1440,6 +1452,53 @@ SampleDicerAudioProcessorEditor::SampleDicerAudioProcessorEditor(SampleDicerAudi
     back.onClick = [this] { processor.back(); };
     samples.onClick = [this] { processor.requestRandomizeAction(SampleDicerAudioProcessor::RandomizeAction::samples); };
     params.onClick = [this] { processor.requestRandomizeAction(SampleDicerAudioProcessor::RandomizeAction::params); };
+    sampleBrowserModal.onSampleLoaded = [this](const juce::File& file)
+    {
+        if (file.existsAsFile() && sampledicer::SampleDatabase::isSupportedAudioFile(file))
+        {
+            processor.loadSample(currentBrowserSlot, file);
+            if (slots[(size_t)currentBrowserSlot] != nullptr)
+                slots[(size_t)currentBrowserSlot]->refresh();
+        }
+    };
+    sampleBrowserModal.onFolderAssigned = [this](const juce::File& folder)
+    {
+        if (folder.isDirectory())
+        {
+            processor.setSlotFolder(currentBrowserSlot, folder);
+        }
+    };
+    sampleBrowserModal.onPlayAudition = [this](const juce::File& file, float gain)
+    {
+        processor.playAuditionSample(file, gain);
+    };
+    sampleBrowserModal.onStopAudition = [this]
+    {
+        processor.stopAudition();
+    };
+    sampleBrowserModal.isAuditionPlaying = [this]
+    {
+        return processor.isAuditioning();
+    };
+    sampleBrowserModal.onSetAuditionGain = [this](float gain)
+    {
+        processor.setAuditionGain(gain);
+    };
+    sampleBrowserModal.getRecentFoldersCallback = [this]() -> juce::Array<juce::File>
+    {
+        juce::Array<juce::File> list;
+        for (int s = 0; s < 4; ++s)
+        {
+            auto folder = processor.sampleFolderForSlot(s);
+            if (folder.isDirectory() && !list.contains(folder))
+                list.add(folder);
+        }
+        auto lastF = processor.lastFolder();
+        if (lastF.isDirectory() && !list.contains(lastF))
+            list.add(lastF);
+        return list;
+    };
+    addChildComponent(sampleBrowserModal);
     setResizable(true, true);
     setResizeLimits(juce::roundToInt(designWidth * minimumScale),
                     juce::roundToInt(designHeight * minimumScale),
@@ -1680,6 +1739,7 @@ void SampleDicerAudioProcessorEditor::updateComponentColours()
         quickExportButton.setColour(juce::TextButton::buttonColourId, currentTheme.button);
         quickExportButton.setColour(juce::TextButton::textColourOffId, currentTheme.primaryText);
     }
+    sampleBrowserModal.setColors(currentTheme.accent, currentTheme.background, currentTheme.panel, currentTheme.button);
     content.sendLookAndFeelChange();
     repaint();
 }
@@ -1839,6 +1899,7 @@ void SampleDicerAudioProcessorEditor::resized()
         masterAdsrLabels[i].setBounds(column.removeFromTop(14));
         masterAdsr[i].setBounds(column);
     }
+    sampleBrowserModal.setBounds(getLocalBounds());
 }
 
 void SampleDicerAudioProcessorEditor::timerCallback()
@@ -1864,4 +1925,23 @@ void SampleDicerAudioProcessorEditor::timerCallback()
             applyGlitchThemeFrame();
     }
     for (auto& view : slots) if (view != nullptr) { view->refresh(); view->repaint(); }
+}
+
+void SampleDicerAudioProcessorEditor::openSampleBrowserForSlot(int slot)
+{
+    currentBrowserSlot = juce::jlimit(0, 3, slot);
+    sampleBrowserModal.setLoadButtonText("LOAD TO SLOT " + juce::String(currentBrowserSlot + 1));
+    sampleBrowserModal.setAssignFolderButtonText("SET FOLDER " + juce::String(currentBrowserSlot + 1));
+
+    const auto currentFolder = processor.sampleFolderForSlot(currentBrowserSlot);
+    const auto currentFile = processor.sampleFile(currentBrowserSlot);
+    sampleBrowserModal.openBrowser(currentFolder, currentFile);
+}
+
+bool SampleDicerAudioProcessorEditor::keyPressed(const juce::KeyPress& keyPress)
+{
+    if (sampleBrowserModal.isVisible())
+        return sampleBrowserModal.keyPressed(keyPress);
+
+    return AudioProcessorEditor::keyPressed(keyPress);
 }
