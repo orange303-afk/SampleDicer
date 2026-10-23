@@ -12,10 +12,15 @@ if [ ! -d "$BUILD_DIR" ]; then
     BUILD_DIR="$PROJECT_ROOT/build/SampleDicer_artefacts/Release"
 fi
 
-OUTPUT_DIR="$PROJECT_ROOT/release/1.5.3"
-PKG_OUTPUT="$OUTPUT_DIR/Sample-Dicer-1.5.3-macOS-Universal.pkg"
+VERSION=$(grep -E "project\(SampleDicer VERSION" "$PROJECT_ROOT/CMakeLists.txt" | sed -E 's/.*VERSION ([0-9.]+).*/\1/')
+if [ -z "$VERSION" ]; then
+    VERSION="1.6.0"
+fi
 
-echo "=== Packaging Sample Dicer Universal Release ==="
+OUTPUT_DIR="$PROJECT_ROOT/release/$VERSION"
+PKG_OUTPUT="$OUTPUT_DIR/Sample-Dicer-$VERSION-macOS-Universal.pkg"
+
+echo "=== Packaging Sample Dicer Universal Release v$VERSION ==="
 echo "Using build artifacts from: $BUILD_DIR"
 
 # Check source bundles
@@ -36,10 +41,10 @@ fi
 mkdir -p "$OUTPUT_DIR"
 
 echo "Creating zip archives for AU, VST3, Standalone..."
-cd "$BUILD_DIR/AU" && zip -r -q "$OUTPUT_DIR/Sample-Dicer-1.5.3-macOS-Universal-AU.zip" "Sample Dicer.component"
-cd "$BUILD_DIR/VST3" && zip -r -q "$OUTPUT_DIR/Sample-Dicer-1.5.3-macOS-Universal-VST3.zip" "Sample Dicer.vst3"
+cd "$BUILD_DIR/AU" && zip -r -q "$OUTPUT_DIR/Sample-Dicer-$VERSION-macOS-Universal-AU.zip" "Sample Dicer.component"
+cd "$BUILD_DIR/VST3" && zip -r -q "$OUTPUT_DIR/Sample-Dicer-$VERSION-macOS-Universal-VST3.zip" "Sample Dicer.vst3"
 if [ -d "$APP_SRC" ]; then
-    cd "$BUILD_DIR/Standalone" && zip -r -q "$OUTPUT_DIR/Sample-Dicer-1.5.3-macOS-Universal-Standalone.zip" "Sample Dicer.app"
+    cd "$BUILD_DIR/Standalone" && zip -r -q "$OUTPUT_DIR/Sample-Dicer-$VERSION-macOS-Universal-Standalone.zip" "Sample Dicer.app"
 fi
 
 # Prepare staging directories
@@ -71,7 +76,7 @@ echo "Building PKG installer using pkgbuild..."
 pkgbuild \
     --root "$STAGING_DIR" \
     --identifier "com.sampledicer.pkg.macOS" \
-    --version "1.5.3" \
+    --version "$VERSION" \
     --install-location "/" \
     --scripts "$SCRIPT_DIR/pkg_scripts" \
     "$PKG_OUTPUT"

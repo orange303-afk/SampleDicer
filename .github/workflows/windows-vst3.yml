@@ -30,19 +30,19 @@ jobs:
         run: |
           Compress-Archive `
             -Path "build/SampleDicer_artefacts/Release/VST3/Sample Dicer.vst3" `
-            -DestinationPath "Sample-Dicer-1.5.3-Windows-x64-VST3.zip"
+            -DestinationPath "Sample-Dicer-1.6.0-Windows-x64-VST3.zip"
 
       - name: Package All Windows Artifacts
         shell: pwsh
         run: |
           Compress-Archive `
             -Path "build/SampleDicer_artefacts/Release/VST3/Sample Dicer.vst3", "build/SampleDicer_artefacts/Release/Standalone/Sample Dicer.exe" `
-            -DestinationPath "Sample-Dicer-1.5.3-Windows-x64.zip"
+            -DestinationPath "Sample-Dicer-1.6.0-Windows-x64.zip"
 
       - name: Store workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Sample-Dicer-1.5.3-Windows-x64
+          name: Sample-Dicer-1.6.0-Windows-x64
           path: |
-            Sample-Dicer-1.5.3-Windows-x64.zip
-            Sample-Dicer-1.5.3-Windows-x64-VST3.zip
+            Sample-Dicer-1.6.0-Windows-x64.zip
+            Sample-Dicer-1.6.0-Windows-x64-VST3.zip
