@@ -291,6 +291,8 @@ void SampleBrowserModalComponent::openBrowser(const juce::File& initialFolder, c
         refreshFiles("");
     }
 
+    isSuppressingAutoplay = true;
+
     if (initialFile.existsAsFile())
     {
         selectedFilePath = initialFile.getFullPathName();
@@ -307,7 +309,8 @@ void SampleBrowserModalComponent::openBrowser(const juce::File& initialFolder, c
 
     setVisible(true);
     toFront(true);
-    grabKeyboardFocus();
+    filesListBox.grabKeyboardFocus();
+    isSuppressingAutoplay = false;
 }
 
 void SampleBrowserModalComponent::setLoadButtonText(const juce::String& text)
@@ -534,6 +537,13 @@ void SampleBrowserModalComponent::previewSelectedSample()
     juce::File f(selectedFilePath);
     if (f.existsAsFile())
     {
+        const auto now = juce::Time::currentTimeMillis();
+        if (selectedFilePath == lastAuditionPath && (now - lastAuditionTime) < 150)
+            return;
+
+        lastAuditionPath = selectedFilePath;
+        lastAuditionTime = now;
+
         const float gain = getAuditionVolume();
         if (onPlayAudition)
             onPlayAudition(f, gain);
@@ -544,6 +554,8 @@ void SampleBrowserModalComponent::previewSelectedSample()
 
 void SampleBrowserModalComponent::stopPreview()
 {
+    lastAuditionPath.clear();
+    lastAuditionTime = 0;
     if (onStopAudition)
         onStopAudition();
 
@@ -647,6 +659,30 @@ bool SampleBrowserModalComponent::keyPressed(const juce::KeyPress& key)
             stopPreview();
         else
             previewSelectedSample();
+        return true;
+    }
+    if (key == juce::KeyPress::upKey && !foldersListBox.hasKeyboardFocus(true) && !rootsListBox.hasKeyboardFocus(true) && !recentsListBox.hasKeyboardFocus(true))
+    {
+        const int numFiles = static_cast<int>(fileItems.size());
+        if (numFiles > 0)
+        {
+            int sel = filesListBox.getSelectedRow();
+            int newSel = (sel <= 0) ? 0 : (sel - 1);
+            filesListBox.selectRow(newSel);
+            filesListBox.scrollToEnsureRowIsOnscreen(newSel);
+        }
+        return true;
+    }
+    if (key == juce::KeyPress::downKey && !foldersListBox.hasKeyboardFocus(true) && !rootsListBox.hasKeyboardFocus(true) && !recentsListBox.hasKeyboardFocus(true))
+    {
+        const int numFiles = static_cast<int>(fileItems.size());
+        if (numFiles > 0)
+        {
+            int sel = filesListBox.getSelectedRow();
+            int newSel = (sel < 0) ? 0 : std::min(sel + 1, numFiles - 1);
+            filesListBox.selectRow(newSel);
+            filesListBox.scrollToEnsureRowIsOnscreen(newSel);
+        }
         return true;
     }
     if (key == juce::KeyPress::returnKey)
@@ -1160,6 +1196,21 @@ void SampleBrowserModalComponent::FilesListModel::listBoxItemDoubleClicked(int r
     {
         owner.selectedFilePath = owner.fileItems[static_cast<size_t>(row)].filePath;
         owner.loadSelectedSample();
+    }
+}
+
+void SampleBrowserModalComponent::FilesListModel::selectedRowsChanged(int lastRowSelected)
+{
+    if (owner.isSuppressingAutoplay)
+        return;
+
+    if (lastRowSelected >= 0 && lastRowSelected < static_cast<int>(owner.fileItems.size()))
+    {
+        owner.selectedFilePath = owner.fileItems[static_cast<size_t>(lastRowSelected)].filePath;
+        if (owner.autoplayToggle.getToggleState())
+        {
+            owner.previewSelectedSample();
+        }
     }
 }
 

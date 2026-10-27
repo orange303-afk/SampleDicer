@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#101316">
-  <meta name="description" content="Sample Dicer is a free four-layer one-shot sampler plugin for Windows and macOS. VST3, AU and standalone. No registration, no launcher, low CPU.">
+  <meta name="description" content="Sample Dicer is a generative one-shot sampler for Windows and macOS. Start free or step up to Sample Dicer Pro with eight layers, per-slot EQ and a built-in sample browser.">
   <meta name="robots" content="index, follow, max-image-preview:large">
   <link rel="canonical" href="https://sampledicer.pro/">
 
@@ -12,22 +12,22 @@
   <meta property="og:site_name" content="Sample Dicer">
   <meta property="og:locale" content="en_US">
   <meta property="og:url" content="https://sampledicer.pro/">
-  <meta property="og:title" content="Sample Dicer — Free One-Shot Sampler Plugin">
-  <meta property="og:description" content="A free four-layer sampler for playable, evolving sounds. VST3, AU and standalone for Windows and macOS.">
+  <meta property="og:title" content="Sample Dicer — Free & Pro One-Shot Sampler">
+  <meta property="og:description" content="Turn sample folders into playable, evolving sounds. Start free or get eight layers, per-slot EQ and batch rendering with Sample Dicer Pro.">
   <meta property="og:image" content="https://sampledicer.pro/assets/og-sample-dicer.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="Sample Dicer free one-shot sampler plugin">
 
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Sample Dicer — Free One-Shot Sampler Plugin">
-  <meta name="twitter:description" content="Four layers, controlled randomisation and evolving sound design. Free for indie creators and small studios.">
+  <meta name="twitter:title" content="Sample Dicer — Free & Pro One-Shot Sampler">
+  <meta name="twitter:description" content="Controlled randomisation for evolving sound design. Four layers in Free, eight layers and a complete sample workflow in Pro.">
   <meta name="twitter:image" content="https://sampledicer.pro/assets/og-sample-dicer.png">
 
-  <title>Sample Dicer — Free One-Shot Sampler Plugin | VST3 &amp; AU</title>
+  <title>Sample Dicer — Free &amp; Pro One-Shot Sampler | VST3 &amp; AU</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=1.5.2">
-  <script src="script.js?v=1.5.2" defer></script>
+  <link rel="stylesheet" href="style.css?v=1.6.0">
+  <script src="script.js?v=1.6.0" defer></script>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -49,7 +49,7 @@
         "applicationCategory": "MultimediaApplication",
         "applicationSubCategory": "Audio sampler plugin",
         "operatingSystem": "Windows 10, Windows 11, macOS 26.0 or later on Apple Silicon or Intel Mac",
-        "softwareVersion": "1.5.2",
+        "softwareVersion": "1.6.0",
         "fileSize": "5 MB",
         "downloadUrl": [
           "https://github.com/orange303-afk/SampleDicer/releases",
@@ -71,6 +71,29 @@
           "https://github.com/orange303-afk/SampleDicer",
           "https://ilyaorange.gumroad.com/l/sampledicer"
         ]
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": "https://sampledicer.pro/#software-pro",
+        "name": "Sample Dicer Pro",
+        "url": "https://sampledicer.pro/#pro",
+        "description": "An eight-layer generative sampler and sound-design instrument with per-slot parametric EQ, an indexed sample browser, Vector Snap, master dynamics and batch rendering.",
+        "applicationCategory": "MultimediaApplication",
+        "applicationSubCategory": "Audio sampler plugin",
+        "operatingSystem": "Windows 10, Windows 11, macOS on Apple Silicon or Intel Mac",
+        "downloadUrl": "https://ilyaorange.gumroad.com/l/sampledicerpro",
+        "author": {
+          "@type": "Person",
+          "name": "Ilya Orange",
+          "url": "https://ilyaorange.bandcamp.com/"
+        },
+        "offers": {
+          "@type": "Offer",
+          "price": "9.99",
+          "priceCurrency": "USD",
+          "availability": "https://schema.org/InStock",
+          "url": "https://ilyaorange.gumroad.com/l/sampledicerpro"
+        }
       }
     ]
   }
@@ -89,6 +112,7 @@
         <span></span><span></span>
       </button>
       <nav class="site-nav" id="site-nav" aria-label="Main navigation" data-nav>
+        <a class="nav-pro" href="#pro">Pro</a>
         <a href="#features">Features</a>
         <a href="#use-cases">Use cases</a>
         <a href="#formats">Formats</a>
@@ -109,8 +133,8 @@
           <h1>Sample Dicer.<br><em>One-shot sampler.</em></h1>
           <p class="hero-lead">A four-layer one-shot sampler built to turn raw audio into playable, evolving sounds.</p>
           <div class="hero-actions">
-            <a class="button button-primary" href="#downloads">Download v1.5.2 <span aria-hidden="true">↓</span></a>
-            <a class="button button-ghost" href="#interface">See it in action</a>
+            <a class="button button-primary" href="#downloads">Download free <span aria-hidden="true">↓</span></a>
+            <a class="button button-ghost" href="#pro">Meet Sample Dicer Pro</a>
           </div>
           <div class="hero-proof" aria-label="Product advantages">
             <span class="proof-primary"><strong>Free</strong><small>For indie creators</small></span>
@@ -146,12 +170,72 @@
           <p>Drop in your sounds, shape every layer and create a new combination in a single click. Nothing between the idea and the result.</p>
         </div>
         <figure class="plugin-frame reveal">
-          <div class="frame-bar"><span></span><span></span><span></span><b>Sample Dicer / v1.5.2</b></div>
+          <div class="frame-bar"><span></span><span></span><span></span><b>Sample Dicer Free / v1.6.0</b></div>
           <picture>
               <source srcset="assets/sample-dicer-interface.avif" type="image/avif">
             <img src="assets/sample-dicer-interface.png" alt="Sample Dicer one-shot sampler plugin interface with four waveform slots and randomisation controls" width="2452" height="2606" loading="lazy" decoding="async">
           </picture>
         </figure>
+      </div>
+    </section>
+
+    <section class="pro-section section" id="pro">
+      <div class="pro-glow" aria-hidden="true"></div>
+      <div class="container">
+        <div class="pro-heading reveal">
+          <div>
+            <p class="pro-kicker"><span>Sample Dicer</span> Pro</p>
+            <h2>More layers.<br>Less searching.</h2>
+          </div>
+          <div class="pro-intro">
+            <p>An eight-layer generative sampler built for deeper sound design and faster delivery. Browse entire libraries, shape every layer and render families of finished sounds without leaving the instrument.</p>
+            <div class="pro-buy-row">
+              <a class="button button-pro" href="https://ilyaorange.gumroad.com/l/sampledicerpro" target="_blank" rel="noreferrer">Get Sample Dicer Pro <span aria-hidden="true">↗</span></a>
+              <span><strong>$9.99</strong><small>One-time purchase</small></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pro-workbench reveal" aria-label="Sample Dicer Pro eight-layer workflow">
+          <div class="pro-stack" aria-hidden="true">
+            <div class="pro-slot"><span>01</span><i></i><b>SUB IMPACT</b><em>EQ</em></div>
+            <div class="pro-slot"><span>02</span><i></i><b>METAL HIT</b><em>EQ</em></div>
+            <div class="pro-slot"><span>03</span><i></i><b>BODY SNAP</b><em>EQ</em></div>
+            <div class="pro-slot"><span>04</span><i></i><b>NOISE TAIL</b><em>EQ</em></div>
+            <div class="pro-slot"><span>05</span><i></i><b>TRANSIENT</b><em>EQ</em></div>
+            <div class="pro-slot"><span>06</span><i></i><b>TEXTURE</b><em>EQ</em></div>
+            <div class="pro-slot"><span>07</span><i></i><b>ROOM</b><em>EQ</em></div>
+            <div class="pro-slot"><span>08</span><i></i><b>GLITCH</b><em>EQ</em></div>
+          </div>
+          <div class="pro-core">
+            <span>8-layer engine</span>
+            <strong>DICE</strong>
+            <small>Generate · shape · export</small>
+          </div>
+          <div class="pro-browser" aria-hidden="true">
+            <div class="browser-title"><span>Sample library</span><b>12,482 sounds</b></div>
+            <div class="browser-search">Search indexed samples…</div>
+            <div class="browser-file active"><span>IMPACT_042.WAV</span><i>▶</i></div>
+            <div class="browser-file"><span>LASER_BODY_08.WAV</span><i>▶</i></div>
+            <div class="browser-file"><span>METAL_DROP_17.WAV</span><i>▶</i></div>
+          </div>
+        </div>
+
+        <div class="pro-feature-grid">
+          <article class="pro-feature reveal"><span>Layers</span><h3>Eight slots</h3><p>Double the layers for denser drums, textures, impacts and composite effects.</p></article>
+          <article class="pro-feature reveal"><span>Tone</span><h3>Per-slot 4-band EQ</h3><p>Surgical tone shaping on every layer with a real-time spectrum view.</p></article>
+          <article class="pro-feature reveal"><span>Library</span><h3>Indexed sample browser</h3><p>Scan folders once, search deeply, audition instantly and load directly to any slot.</p></article>
+          <article class="pro-feature reveal"><span>Shape</span><h3>Vector Snap</h3><p>Phase-dispersed transients for laser zaps, synthetic clicks and extra body.</p></article>
+          <article class="pro-feature reveal"><span>Output</span><h3>Master dynamics</h3><p>Glue compressor and global ADSR bring the complete layered sound under control.</p></article>
+          <article class="pro-feature reveal"><span>Delivery</span><h3>Drag, drop & batch render</h3><p>Move audio straight into your DAW or export multiple variations to disk.</p></article>
+          <article class="pro-feature reveal"><span>Recall</span><h3>Recent sample history</h3><p>Reopen the last six files from any slot label and keep useful discoveries close.</p></article>
+          <article class="pro-feature reveal"><span>Interface</span><h3>Scalable vector UI</h3><p>Work from 100% to 200% with persistent retro-futuristic colour themes.</p></article>
+        </div>
+
+        <div class="pro-license reveal">
+          <p><strong>Commercial rights included.</strong> Sounds created or exported with Sample Dicer Pro are royalty-free for music, film, games, sound design and commercial sample libraries.</p>
+          <a href="https://ilyaorange.gumroad.com/l/sampledicerpro" target="_blank" rel="noreferrer">Buy Sample Dicer Pro on Gumroad <span aria-hidden="true">↗</span></a>
+        </div>
       </div>
     </section>
 
@@ -214,8 +298,8 @@
     <section class="downloads section" id="downloads">
       <div class="container">
         <div class="download-head reveal">
-          <div><p class="eyebrow"><span></span> Current release</p><h2>Download<br>Sample Dicer.</h2></div>
-          <div class="version-stamp"><span>Version</span><strong>1.5.2</strong><small>July 2026</small></div>
+          <div><p class="eyebrow"><span></span> Current free release</p><h2>Download<br>Sample Dicer.</h2></div>
+          <div class="version-stamp"><span>Version</span><strong>1.6.0</strong><small>October 2026</small></div>
         </div>
         <div class="download-list reveal">
           <a href="https://github.com/orange303-afk/SampleDicer/releases" target="_blank" rel="noreferrer"><span class="download-index">01</span><span class="download-name"><strong>GitHub Releases</strong><small>All builds · Source code · Release notes</small></span><span class="download-size">Official repository</span><b aria-hidden="true">↗</b></a>

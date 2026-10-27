@@ -673,7 +673,8 @@ SlotView::SlotView(SampleDicerAudioProcessor& p, int index)
     thumbnailFormats.registerBasicFormats();
     thumbnail.addChangeListener(this);
     title.setText("SLOT " + juce::String(index + 1), juce::dontSendNotification);
-    title.setFont(juce::FontOptions(15.0f, juce::Font::bold));
+    title.setFont(juce::FontOptions(14.0f, juce::Font::bold));
+    title.setMinimumHorizontalScale(0.70f);
     addAndMakeVisible(title); addAndMakeVisible(file); addAndMakeVisible(previous); addAndMakeVisible(next);
     slotDice.setTooltip("Choose a random sample from this slot's folder; host parameter: Randomize Slot Sample Trigger");
     addAndMakeVisible(slotDice);
@@ -781,10 +782,9 @@ void SlotView::setGlitchVisuals(bool enabled, uint32_t seed)
 {
     glitchVisuals = enabled;
     glitchSeed = seed + static_cast<uint32_t>(slot) * 0x9e3779b9u;
+    displayedPadTitle.clear();
+    displayedSampleName.clear();
     const std::array<juce::String, 5> names { "VOLUME", "PITCH", "START", "SHIFT", "FADE" };
-    title.setText(enabled ? makeZalgoText("SLOT " + juce::String(slot + 1), glitchSeed)
-                          : "SLOT " + juce::String(slot + 1),
-                  juce::dontSendNotification);
     for (size_t i = 0; i < labels.size(); ++i)
         labels[i].setText(enabled ? makeZalgoText(names[i], glitchSeed + static_cast<uint32_t>(i * 97))
                                   : names[i],
@@ -1247,7 +1247,7 @@ void SlotView::resized()
 {
     auto area = getLocalBounds().reduced(10);
     auto header = area.removeFromTop(25);
-    title.setBounds(header.removeFromLeft(66));
+    title.setBounds(header.removeFromLeft(130));
     previous.setBounds(header.removeFromLeft(27));
     clearSlot.setBounds(header.removeFromRight(27));
     header.removeFromRight(3);
@@ -1282,14 +1282,28 @@ void SlotView::refresh()
 {
     const auto current = processor.sampleFile(slot);
     const auto name = processor.sampleName(slot);
+    const auto padTitle = current.existsAsFile()
+        ? current.getFileNameWithoutExtension()
+        : ("SLOT " + juce::String(slot + 1));
+
+    if (padTitle != displayedPadTitle || glitchVisuals != displayedWithGlitch
+        || (glitchVisuals && glitchSeed != displayedGlitchSeed))
+    {
+        displayedPadTitle = padTitle;
+        displayedWithGlitch = glitchVisuals;
+        displayedGlitchSeed = glitchSeed;
+        title.setText(glitchVisuals ? makeZalgoText(padTitle, glitchSeed) : padTitle,
+                      juce::dontSendNotification);
+        title.setTooltip(current.existsAsFile() ? current.getFullPathName() : ("Slot " + juce::String(slot + 1)));
+    }
+
     if (name != displayedSampleName || glitchVisuals != displayedWithGlitch
         || (glitchVisuals && glitchSeed != displayedGlitchSeed))
     {
         displayedSampleName = name;
-        displayedWithGlitch = glitchVisuals;
-        displayedGlitchSeed = glitchSeed;
         file.setText(glitchVisuals ? makeZalgoText(name, glitchSeed + 0x51ed270bu) : name,
                      juce::dontSendNotification);
+        file.setTooltip(current.existsAsFile() ? current.getFullPathName() : juce::String());
     }
     if (current != displayedFile)
     {

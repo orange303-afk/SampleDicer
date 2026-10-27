@@ -181,6 +181,7 @@ private:
     juce::AudioThumbnail thumbnail { 512, thumbnailFormats, thumbnailCache };
     juce::File displayedFile;
     juce::String displayedSampleName;
+    juce::String displayedPadTitle;
     uint32_t displayedGlitchSeed = 0;
     bool displayedWithGlitch = false;
     juce::Rectangle<int> waveformArea;

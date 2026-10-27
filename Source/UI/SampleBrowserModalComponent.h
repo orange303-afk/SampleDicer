@@ -253,6 +253,7 @@ private:
         void paintListBoxItem(int rowNumber, juce::Graphics& g, int width, int height, bool rowIsSelected) override;
         void listBoxItemClicked(int row, const juce::MouseEvent& e) override;
         void listBoxItemDoubleClicked(int row, const juce::MouseEvent& e) override;
+        void selectedRowsChanged(int lastRowSelected) override;
         juce::var getDragSourceDescription(const juce::SparseSet<int>& selectedRows) override;
     private:
         SampleBrowserModalComponent& owner;
@@ -262,6 +263,10 @@ private:
     RecentsListModel recentsModel;
     FoldersListModel foldersModel;
     FilesListModel filesModel;
+
+    bool isSuppressingAutoplay = false;
+    juce::String lastAuditionPath;
+    juce::int64 lastAuditionTime = 0;
 
     BrowserLcdLookAndFeel lcdLnf;
     std::shared_ptr<juce::FileChooser> activeFileChooser;

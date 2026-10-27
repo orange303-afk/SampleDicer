@@ -7,11 +7,7 @@ else()
   message(FATAL_ERROR "JUCE not found. Clone it into ./JUCE")
 endif()
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Windows" AND NOT MSVC)
-  set(vst3_auto_manifest FALSE)
-else()
-  set(vst3_auto_manifest TRUE)
-endif()
+set(vst3_auto_manifest FALSE)
 
 juce_add_plugin(SampleDicer COMPANY_NAME "Ilya Orange" BUNDLE_ID com.sampledicer.plugin
   PLUGIN_MANUFACTURER_CODE SmDc PLUGIN_CODE Sdcr FORMATS AU VST3 Standalone
@@ -61,15 +57,10 @@ if(APPLE)
   endforeach()
 
   set(vst3_install_dir "/Library/Audio/Plug-Ins/VST3")
-  set(stale_user_vst3 "$ENV{HOME}/Library/Audio/Plug-Ins/VST3/Sample Dicer.vst3")
+  set(user_vst3_install_dir "$ENV{HOME}/Library/Audio/Plug-Ins/VST3")
   add_custom_command(TARGET SampleDicer_VST3 POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E rm -rf "${stale_user_vst3}"
-    COMMAND ${CMAKE_COMMAND} -E rm -rf "${vst3_install_dir}/Sample Dicer.vst3"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "$<TARGET_BUNDLE_DIR:SampleDicer_VST3>"
-            "${vst3_install_dir}/Sample Dicer.vst3"
-    COMMAND /usr/bin/xattr -dr com.apple.quarantine "${vst3_install_dir}/Sample Dicer.vst3"
-    COMMAND /usr/bin/xattr -cr "${vst3_install_dir}/Sample Dicer.vst3"
-    COMMENT "Installing VST3 to ${vst3_install_dir}"
+    COMMAND /bin/sh -c "if [ -w \"${vst3_install_dir}\" ]; then rm -rf \"${vst3_install_dir}/Sample Dicer.vst3\" 2>/dev/null && cp -R \"$<TARGET_BUNDLE_DIR:SampleDicer_VST3>\" \"${vst3_install_dir}/\" 2>/dev/null; elif [ -d \"${user_vst3_install_dir}\" ]; then rm -rf \"${user_vst3_install_dir}/Sample Dicer.vst3\" 2>/dev/null && cp -R \"$<TARGET_BUNDLE_DIR:SampleDicer_VST3>\" \"${user_vst3_install_dir}/\" 2>/dev/null; fi || true"
+    COMMENT "Optionally copying VST3 to audio plugins directory"
     VERBATIM)
 elseif(WIN32 AND MSVC AND NOT DEFINED ENV{CI})
   if(CMAKE_SIZEOF_VOID_P EQUAL 8)
