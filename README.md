@@ -1,5 +1,7 @@
 # Sample Dicer
 
+**Support Sample Dicer:** [Donate on Ko-fi](https://ko-fi.com/ilyaorange).
+
 Four-layer one-shot sampler for AU, VST3 and standalone use. One MIDI note normally triggers all four layers, or one non-repeating random layer in Round Robin mode. **DICE** selects samples from their source folders and randomises volume, pitch, start point and delay.
 
 <img width="1224" height="1310" alt="image" src="https://github.com/user-attachments/assets/2f367d59-bc23-4f26-b22c-51aff6c1439f" />
