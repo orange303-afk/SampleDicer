@@ -108,7 +108,8 @@ permission. Contact Ilya Orange via
 ## Support
 
 If you enjoy Sample Dicer and would like to support its development, you can
-[make a donation via PayPal](https://www.paypal.com/paypalme/ilyaorange303).
+[make a donation via PayPal](https://www.paypal.com/paypalme/ilyaorange303) or
+[via Ko-fi](https://ko-fi.com/ilyaorange).
 
 BTC: bc1qyslgnxddg0d0wtdt028sk58zzu3pezlvqu50zs
 

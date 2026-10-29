@@ -167,7 +167,8 @@ public:
           website("ilyaorange.tilda.ws", juce::URL("https://ilyaorange.tilda.ws")),
           bandcamp("ilyaorange.bandcamp.com", juce::URL("https://ilyaorange.bandcamp.com")),
           gumroad("ilyaorange.gumroad.com", juce::URL("https://ilyaorange.gumroad.com")),
-          donate("Donate via PayPal", juce::URL("https://www.paypal.com/paypalme/ilyaorange303"))
+          donate("Donate via PayPal", juce::URL("https://www.paypal.com/paypalme/ilyaorange303")),
+          kofi("Donate via Ko-fi", juce::URL("https://ko-fi.com/ilyaorange"))
     {
         title.setText("Sample Dicer " + juce::String(JucePlugin_VersionString) + " by Ilya Orange",
                       juce::dontSendNotification);
@@ -176,7 +177,7 @@ public:
         title.setColour(juce::Label::textColourId, theme.primaryText);
         addAndMakeVisible(title);
         getPro.setFont(juce::FontOptions(13.0f, juce::Font::bold), false);
-        for (auto* link : { &getPro, &productWebsite, &website, &bandcamp, &gumroad, &donate })
+        for (auto* link : { &getPro, &productWebsite, &website, &bandcamp, &gumroad, &donate, &kofi })
         {
             link->setColour(juce::HyperlinkButton::textColourId, theme.accent);
             addAndMakeVisible(link);
@@ -194,7 +195,7 @@ public:
                        "USDT (TRC20): TR2t7ivAzwAcvsbYXSHCCifyAggrWqELXt",
                        false);
         addAndMakeVisible(crypto);
-        setSize(520, 315);
+        setSize(520, 345);
     }
 
     void paint(juce::Graphics& g) override
@@ -207,7 +208,7 @@ public:
         auto area = getLocalBounds().reduced(14);
         title.setBounds(area.removeFromTop(31));
         area.removeFromTop(3);
-        for (auto* link : { &getPro, &productWebsite, &website, &bandcamp, &gumroad, &donate })
+        for (auto* link : { &getPro, &productWebsite, &website, &bandcamp, &gumroad, &donate, &kofi })
             link->setBounds(area.removeFromTop(27));
         area.removeFromTop(5);
         crypto.setBounds(area);
@@ -216,7 +217,7 @@ public:
 private:
     DicerTheme theme;
     juce::Label title;
-    juce::HyperlinkButton getPro, productWebsite, website, bandcamp, gumroad, donate;
+    juce::HyperlinkButton getPro, productWebsite, website, bandcamp, gumroad, donate, kofi;
     juce::TextEditor crypto;
 };
 
